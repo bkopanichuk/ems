@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp:*)",
+      "WebFetch(domain:www.shadcn.io)",
+      "WebFetch(domain:ui.shadcn.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
