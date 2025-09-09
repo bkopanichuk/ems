@@ -1,4 +1,4 @@
-PRD — Minimal Admin-Managed Platform (Auth by Login Only)
+PRD
 
 0) Objective
 
@@ -8,7 +8,7 @@ Backend: Node.js + Express.js + TypeScript.
 
 Frontend: Vue (Nuxt.js) + shadcn + TypeScript; Composition API; FSD inside components/.
 
-Database: PostgreSQL.
+Database: PostgreSQL with Prisma as the ORM.
 
 Deployment: docker-compose for both dev and prod.
 
@@ -18,11 +18,11 @@ Code: maintainable, tested, and written to industry standards.
 
 User
 
-Can log in by login (username) and password (no email).
+Logs in by login (username) and password (no email).
 
 Sees an empty screen with a top toolbar and an empty left menu.
 
-Top-right profile icon → Profile page: can set/change display name and password.
+Profile icon (top-right) → Profile page: can set/change display name and password.
 
 Admin
 
@@ -30,19 +30,19 @@ Credentials (login + password) are set via env.
 
 After login: empty screen with top toolbar and a left menu.
 
-Top-right profile icon → Profile page: can set/change display name.
+Profile icon (top-right) → Profile page: can set/change display name.
 
 Left menu includes User Management:
 
-View list of users.
+View users.
 
 Create user (set login and password).
 
 Delete user.
 
-Block user.
+Block/unblock user.
 
-Assign role to a user.
+Assign role to user.
 
 Constraints
 
@@ -103,7 +103,7 @@ Backend: Node.js, Express.js, TypeScript.
 
 Frontend: Nuxt.js (Vue), shadcn, TypeScript, Composition API, FSD within components/.
 
-Database: PostgreSQL.
+Database & ORM: PostgreSQL with Prisma.
 
 Deployment: docker-compose for dev and prod environments.
 
@@ -150,8 +150,4 @@ The application can be started for dev and prod via docker-compose.
 
 Admin credentials are consumed from environment variables.
 
-Code Quality
-
-Codebase includes tests (backend + frontend).
-
-Structure and patterns reflect industry standards and are ready for future expansion.
+Prisma is used as the ORM with PostgreSQL.
