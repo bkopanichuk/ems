@@ -160,3 +160,4 @@ Backend: **Node.js**. Frontend: **Vue 3 (Nuxt) + shadcn-vue**. Deployment: **clo
 - **Model/firmware incompatibility:** driver returns capability error; device marked `Degraded`; manual action required.
 - **Wrong local time on device:** driver must set time or compensate offset during write if supported; otherwise warn in logs.
 - **Partial telemetry:** profit calculations ignore missing intervals or mark them low-quality.
+
