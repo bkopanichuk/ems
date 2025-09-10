@@ -4,11 +4,9 @@ PRD
 
 Deliver a clean, production-grade skeleton of a web application to be extended later. Requirements:
 
-Backend: Node.js + Express.js + TypeScript.
+Backend: Node.js + Nest.js + TypeScript + Prisma + PostgreSQL.
 
 Frontend: Vue (Nuxt.js) + shadcn + TypeScript; Composition API; FSD inside components/.
-
-Database: PostgreSQL with Prisma as the ORM.
 
 Deployment: docker-compose for both dev and prod.
 
@@ -99,11 +97,9 @@ Standards: follow best industry patterns across backend, frontend, and project l
 
 4) Tech Stack (Fixed)
 
-Backend: Node.js, Express.js, TypeScript.
+Backend: Node.js, Nest.js, TypeScript, Prisma, PostgreSQL
 
 Frontend: Nuxt.js (Vue), shadcn, TypeScript, Composition API, FSD within components/.
-
-Database & ORM: PostgreSQL with Prisma.
 
 Deployment: docker-compose for dev and prod environments.
 
