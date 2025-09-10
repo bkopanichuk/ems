@@ -115,14 +115,25 @@ cd frontend && npm run build
 
 ### Environment Variables
 
-#### Backend (.env)
+#### Backend (docker-compose.yml environment)
+
+```yaml
+environment:
+  - NODE_ENV=development
+  - PORT=3001
+  - DATABASE_URL=postgresql://postgres:password@db:5432/ems_db?schema=public
+  - ADMIN_USERNAME=admin
+  - ADMIN_PASSWORD=admin123
+  - JWT_SECRET=dev-jwt-secret-key
+```
+
+#### Backend (.env - local file)
 
 ```
 DATABASE_URL="postgresql://postgres:password@localhost:5432/ems_db?schema=public"
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="admin123"
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-PORT=3001
 ```
 
 #### Frontend (.env)
