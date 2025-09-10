@@ -143,6 +143,9 @@ NUXT_PUBLIC_API_BASE="http://localhost:3001"
 NUXT_PUBLIC_API_URL="http://localhost:3001/api"
 NUXT_HOST="0.0.0.0"
 NUXT_PORT=3000
+NODE_ENV="development"
+NUXT_PUBLIC_APP_NAME="EMS - Energy Management System"
+NUXT_PUBLIC_APP_DESCRIPTION="A modern Energy Management System"
 ```
 
 ## Docker Commands
