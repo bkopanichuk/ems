@@ -19,12 +19,17 @@ exports.ChangePasswordDto = ChangePasswordDto;
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Length)(1, 100),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "currentPassword", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.MinLength)(6),
+    (0, class_validator_1.Length)(6, 100),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/, {
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    }),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "newPassword", void 0);
 //# sourceMappingURL=change-password.dto.js.map

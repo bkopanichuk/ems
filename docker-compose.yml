@@ -28,7 +28,7 @@ services:
       - "${BACKEND_PORT:-3000}:3000"
     environment:
       NODE_ENV: development
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-ems_dev}
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
       ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}

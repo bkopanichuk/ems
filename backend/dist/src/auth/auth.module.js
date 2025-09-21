@@ -16,6 +16,7 @@ const auth_controller_1 = require("./auth.controller");
 const local_strategy_1 = require("./strategies/local.strategy");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const database_module_1 = require("../database/database.module");
+const audit_module_1 = require("../audit/audit.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -23,12 +24,14 @@ exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
             database_module_1.DatabaseModule,
+            audit_module_1.AuditModule,
+            config_1.ConfigModule,
             passport_1.PassportModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: async (configService) => ({
                     secret: configService.get('JWT_SECRET'),
-                    signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN', '7d') },
+                    signOptions: { expiresIn: configService.get('JWT_ACCESS_EXPIRY', '15m') },
                 }),
                 inject: [config_1.ConfigService],
             }),

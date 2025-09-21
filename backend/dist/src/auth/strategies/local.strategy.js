@@ -20,11 +20,12 @@ let LocalStrategy = class LocalStrategy extends (0, passport_1.PassportStrategy)
         super({
             usernameField: 'login',
             passwordField: 'password',
+            passReqToCallback: true,
         });
         this.authService = authService;
     }
-    async validate(login, password) {
-        const user = await this.authService.validateUser(login, password);
+    async validate(request, login, password) {
+        const user = await this.authService.validateUser(login, password, request);
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }

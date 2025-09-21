@@ -13,12 +13,53 @@ enum Role {
 }
 
 model User {
-  id          String    @id @default(uuid())
-  login       String    @unique
-  password    String
-  displayName String?
-  role        Role      @default(USER)
-  isBlocked   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String         @id @default(uuid())
+  login             String         @unique
+  password          String
+  displayName       String?
+  role              Role           @default(USER)
+  isBlocked         Boolean        @default(false)
+  lastLoginAt       DateTime?
+  loginCount        Int            @default(0)
+  failedLoginAttempts Int          @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  token       String   @unique
+  userId      String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  revokedAt   DateTime?
+  userAgent   String?
+  ipAddress   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String
+  action      String
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateUserDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const client_1 = require("@prisma/client");
 class CreateUserDto {
     login;
@@ -20,19 +21,30 @@ class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;
 __decorate([
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.Length)(3, 50),
+    (0, class_validator_1.Matches)(/^[a-zA-Z0-9_-]+$/, {
+        message: 'Login must contain only letters, numbers, underscores, and hyphens',
+    }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "login", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.MinLength)(6),
+    (0, class_validator_1.Length)(6, 100),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/, {
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "password", void 0);
 __decorate([
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.Length)(1, 100),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "displayName", void 0);
 __decorate([

@@ -7,16 +7,19 @@ import { AuthController } from './auth.controller';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { DatabaseModule } from '../database/database.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    AuditModule,
+    ConfigModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN', '7d') },
+        signOptions: { expiresIn: configService.get('JWT_ACCESS_EXPIRY', '15m') },
       }),
       inject: [ConfigService],
     }),
