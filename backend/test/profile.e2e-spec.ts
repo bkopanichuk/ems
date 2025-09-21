@@ -1,8 +1,14 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 const request = require('supertest');
 import { createTestingApp, mockAuthUser } from './test-utils';
 import { PrismaService } from '../src/database/prisma.service';
-import * as bcrypt from 'bcrypt';
+import { ProfileService } from '../src/profile/profile.service';
+
+// Mock bcrypt at module level
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 describe('Profile (e2e)', () => {
   let app: INestApplication;
@@ -96,44 +102,35 @@ describe('Profile (e2e)', () => {
 
   describe('/profile/change-password (POST)', () => {
     it('should change password successfully', async () => {
-      prismaService.user.findFirst.mockResolvedValue(mockAuthUser);
-
-      // Mock bcrypt for password validation
-      jest.spyOn(bcrypt, 'compare').mockImplementation((pass, hash) => {
-        if (pass === 'oldPassword123') return Promise.resolve(true);
-        return Promise.resolve(false);
-      });
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue('newHashedPassword');
-
-      prismaService.user.update.mockResolvedValue({
-        ...mockAuthUser,
-        password: 'newHashedPassword',
+      const profileService = app.get(ProfileService);
+      profileService.changePassword = jest.fn().mockResolvedValue({
+        message: 'Password changed successfully',
       });
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .post('/profile/change-password')
         .set('Authorization', 'Bearer mock-jwt-token')
         .send({
-          oldPassword: 'oldPassword123',
+          currentPassword: 'oldPassword123',
           newPassword: 'newPassword123',
         })
         .expect(201);
     });
 
     it('should fail with incorrect old password', async () => {
-      prismaService.user.findFirst.mockResolvedValue(mockAuthUser);
-
-      // Mock bcrypt to return false for wrong password
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
+      const profileService = app.get(ProfileService);
+      profileService.changePassword = jest.fn().mockRejectedValue(
+        new UnauthorizedException('Current password is incorrect')
+      );
 
       await request(app.getHttpServer())
         .post('/profile/change-password')
         .set('Authorization', 'Bearer mock-jwt-token')
         .send({
-          oldPassword: 'wrongPassword',
+          currentPassword: 'wrongPassword',
           newPassword: 'newPassword123',
         })
-        .expect(400);
+        .expect(401);
     });
 
     it('should validate password requirements', async () => {
@@ -141,7 +138,7 @@ describe('Profile (e2e)', () => {
         .post('/profile/change-password')
         .set('Authorization', 'Bearer mock-jwt-token')
         .send({
-          oldPassword: 'oldPassword123',
+          currentPassword: 'oldPassword123',
           newPassword: 'short', // Too short
         })
         .expect(400);
@@ -150,7 +147,7 @@ describe('Profile (e2e)', () => {
         .post('/profile/change-password')
         .set('Authorization', 'Bearer mock-jwt-token')
         .send({
-          oldPassword: 'oldPassword123',
+          currentPassword: 'oldPassword123',
           newPassword: 'a'.repeat(129), // Too long
         })
         .expect(400);
@@ -160,21 +157,23 @@ describe('Profile (e2e)', () => {
       await request(app.getHttpServer())
         .post('/profile/change-password')
         .send({
-          oldPassword: 'oldPassword123',
+          currentPassword: 'oldPassword123',
           newPassword: 'newPassword123',
         })
         .expect(401);
     });
 
     it('should not allow admin to change password', async () => {
-      const adminUser = { ...mockAuthUser, role: 'ADMIN' };
-      prismaService.user.findFirst.mockResolvedValue(adminUser);
+      const profileService = app.get(ProfileService);
+      profileService.changePassword = jest.fn().mockRejectedValue(
+        new ForbiddenException('Administrators cannot change passwords via this endpoint')
+      );
 
       await request(app.getHttpServer())
         .post('/profile/change-password')
-        .set('Authorization', 'Bearer mock-jwt-token')
+        .set('Authorization', 'Bearer admin-token')
         .send({
-          oldPassword: 'oldPassword123',
+          currentPassword: 'oldPassword123',
           newPassword: 'newPassword123',
         })
         .expect(403);

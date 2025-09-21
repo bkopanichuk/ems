@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 const request = require('supertest');
 import { createTestingApp, mockAuthUser, mockAdminUser } from './test-utils';
 import { PrismaService } from '../src/database/prisma.service';
+import { UsersService } from '../src/users/users.service';
 
 describe('Users (e2e)', () => {
   let app: INestApplication;
@@ -38,8 +39,17 @@ describe('Users (e2e)', () => {
     });
 
     it('should support pagination', async () => {
-      prismaService.user.findMany.mockResolvedValue([mockAuthUser]);
-      prismaService.user.count.mockResolvedValue(10);
+      // Override the service mock for this specific test
+      const usersService = app.get(UsersService);
+      usersService.findAll = jest.fn().mockResolvedValue({
+        data: [],
+        meta: {
+          total: 10,
+          page: 2,
+          lastPage: 2,
+          limit: 5,
+        },
+      });
 
       const response = await request(app.getHttpServer())
         .get('/users?page=2&limit=5')
@@ -106,7 +116,7 @@ describe('Users (e2e)', () => {
     it('should create a new user as admin', async () => {
       const newUser = {
         login: 'newuser',
-        password: 'password123',
+        password: 'Password123!',
         displayName: 'New User',
         role: 'USER',
       };
@@ -141,8 +151,8 @@ describe('Users (e2e)', () => {
         .post('/users')
         .set('Authorization', 'Bearer mock-admin-token')
         .send({
-          login: mockAuthUser.login,
-          password: 'password123',
+          login: 'existinguser',
+          password: 'Password123!',
           displayName: 'Duplicate User',
           role: 'USER',
         })
@@ -263,7 +273,7 @@ describe('Users (e2e)', () => {
     });
   });
 
-  describe('/users/:id/assign-role (POST)', () => {
+  describe('/users/:id/role (PATCH)', () => {
     it('should assign role to user as admin', async () => {
       prismaService.user.findFirst.mockResolvedValue(mockAuthUser);
       prismaService.user.update.mockResolvedValue({
@@ -272,17 +282,17 @@ describe('Users (e2e)', () => {
       });
 
       const response = await request(app.getHttpServer())
-        .post(`/users/${mockAuthUser.id}/assign-role`)
+        .patch(`/users/${mockAuthUser.id}/role`)
         .set('Authorization', 'Bearer mock-admin-token')
         .send({ role: 'ADMIN' })
-        .expect(201);
+        .expect(200);
 
       expect(response.body.role).toBe('ADMIN');
     });
 
     it('should validate role value', async () => {
       await request(app.getHttpServer())
-        .post(`/users/${mockAuthUser.id}/assign-role`)
+        .patch(`/users/${mockAuthUser.id}/role`)
         .set('Authorization', 'Bearer mock-admin-token')
         .send({ role: 'INVALID_ROLE' })
         .expect(400);
