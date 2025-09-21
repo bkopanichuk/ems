@@ -1,0 +1,5 @@
+# Development stage
+FROM node:20-alpine AS development
+WORKDIR /app
+EXPOSE 9000
+CMD ["npm", "run", "dev"]

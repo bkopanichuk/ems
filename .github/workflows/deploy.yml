@@ -1,0 +1,88 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push backend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push frontend Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to staging
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_KEY: ${{ secrets.STAGING_KEY }}
+        run: |
+          echo "Deploying to staging environment..."
+          # SSH deployment commands would go here
+          # ssh -i key $STAGING_USER@$STAGING_HOST "docker pull ..."
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    needs: [build, deploy-staging]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to production
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_KEY: ${{ secrets.PROD_KEY }}
+        run: |
+          echo "Deploying to production environment..."
+          # SSH deployment commands would go here
+          # This would typically run the deploy script on the production server

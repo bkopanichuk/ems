@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ems_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-9000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-9000}:9000"
+    environment:
+      API_URL: http://localhost:${BACKEND_PORT:-3000}
+    command: sh -c "npm install && npm run dev"
+
+volumes:
+  postgres_data:

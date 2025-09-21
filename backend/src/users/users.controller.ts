@@ -1,0 +1,81 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  ParseIntPipe,
+  DefaultValuePipe,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
+
+@Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Post()
+  @Roles(Role.ADMIN)
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
+
+  @Get()
+  @Roles(Role.ADMIN)
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+    return this.usersService.findAll({
+      skip,
+      take: limit,
+    });
+  }
+
+  @Get(':id')
+  @Roles(Role.ADMIN)
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
+  }
+
+  @Post(':id/block')
+  @Roles(Role.ADMIN)
+  blockUser(@Param('id') id: string) {
+    return this.usersService.blockUser(id);
+  }
+
+  @Post(':id/unblock')
+  @Roles(Role.ADMIN)
+  unblockUser(@Param('id') id: string) {
+    return this.usersService.unblockUser(id);
+  }
+
+  @Patch(':id/role')
+  @Roles(Role.ADMIN)
+  assignRole(@Param('id') id: string, @Body('role') role: 'USER' | 'ADMIN') {
+    return this.usersService.assignRole(id, role);
+  }
+}
