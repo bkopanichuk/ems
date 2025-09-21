@@ -68,10 +68,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('sessions/:sessionId/revoke')
   @HttpCode(HttpStatus.OK)
-  revokeSession(
-    @CurrentUser('id') userId: string,
-    @Request() req,
-  ) {
+  revokeSession(@CurrentUser('id') userId: string, @Request() req) {
     const sessionId = req.params.sessionId;
     return this.authService.revokeSession(userId, sessionId);
   }

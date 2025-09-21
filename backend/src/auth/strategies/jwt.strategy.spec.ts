@@ -68,21 +68,29 @@ describe('JwtStrategy', () => {
 
       const payload = { sub: '999', login: 'nonexistent', role: 'USER' };
 
-      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+      await expect(strategy.validate(payload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when user is blocked', async () => {
       const blockedUser = { ...mockUser, isBlocked: true };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(blockedUser);
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        blockedUser,
+      );
 
       const payload = { sub: '1', login: 'testuser', role: 'USER' };
 
-      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
+      await expect(strategy.validate(payload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should return user even if soft deleted', async () => {
       const deletedUser = { ...mockUser, deletedAt: new Date() };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(deletedUser);
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        deletedUser,
+      );
 
       const payload = { sub: '1', login: 'testuser', role: 'USER' };
       const result = await strategy.validate(payload);

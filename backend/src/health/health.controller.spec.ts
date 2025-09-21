@@ -40,7 +40,9 @@ describe('HealthController', () => {
     });
 
     it('should return error status when database is down', async () => {
-      (prismaService.$queryRaw as jest.Mock).mockRejectedValue(new Error('Connection failed'));
+      (prismaService.$queryRaw as jest.Mock).mockRejectedValue(
+        new Error('Connection failed'),
+      );
 
       const result = await controller.check();
 
@@ -86,7 +88,9 @@ describe('HealthController', () => {
     });
 
     it('should return not ready status when database is disconnected', async () => {
-      (prismaService.$queryRaw as jest.Mock).mockRejectedValue(new Error('Connection failed'));
+      (prismaService.$queryRaw as jest.Mock).mockRejectedValue(
+        new Error('Connection failed'),
+      );
 
       const result = await controller.ready();
 
@@ -117,7 +121,9 @@ describe('HealthController', () => {
       expect(result.memory).toEqual({
         heapUsedMB: Math.round(mockMemoryUsage.heapUsed / 1024 / 1024),
         heapTotalMB: Math.round(mockMemoryUsage.heapTotal / 1024 / 1024),
-        percentage: Math.round((mockMemoryUsage.heapUsed / mockMemoryUsage.heapTotal) * 100),
+        percentage: Math.round(
+          (mockMemoryUsage.heapUsed / mockMemoryUsage.heapTotal) * 100,
+        ),
       });
     });
 
@@ -136,9 +142,9 @@ describe('HealthController', () => {
       const result = await controller.ready();
 
       // Should be exactly 50% when using exact MB values
-      expect(result.memory.percentage).toBe(50);
-      expect(result.memory.heapUsedMB).toBe(50);
-      expect(result.memory.heapTotalMB).toBe(100);
+      expect(result.memory?.percentage).toBe(50);
+      expect(result.memory?.heapUsedMB).toBe(50);
+      expect(result.memory?.heapTotalMB).toBe(100);
     });
   });
 });

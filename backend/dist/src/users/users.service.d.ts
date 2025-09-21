@@ -7,11 +7,11 @@ export declare class UsersService {
     constructor(prisma: PrismaService);
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
-        createdAt: Date;
     }>;
     findAll(params?: {
         skip?: number;
@@ -21,11 +21,11 @@ export declare class UsersService {
     }): Promise<{
         data: {
             id: string;
+            createdAt: Date;
             login: string;
             displayName: string | null;
             role: import("@prisma/client").$Enums.Role;
             isBlocked: boolean;
-            createdAt: Date;
             updatedAt: Date;
         }[];
         meta: {
@@ -36,20 +36,20 @@ export declare class UsersService {
     }>;
     findOne(id: string): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     remove(id: string): Promise<{
@@ -89,11 +89,11 @@ export declare class UsersService {
     }): Promise<{
         data: {
             id: string;
+            createdAt: Date;
             login: string;
             displayName: string | null;
             role: import("@prisma/client").$Enums.Role;
             deletedAt: Date | null;
-            createdAt: Date;
         }[];
         meta: {
             total: number;

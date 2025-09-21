@@ -49,8 +49,6 @@ import { AuditModule } from './audit/audit.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(SanitizeMiddleware)
-      .forRoutes('*');
+    consumer.apply(SanitizeMiddleware).forRoutes('*');
   }
 }

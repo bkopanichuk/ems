@@ -33,9 +33,7 @@ describe('Health (e2e)', () => {
     });
 
     it('should be accessible without authentication', () => {
-      return request(app.getHttpServer())
-        .get('/health')
-        .expect(200);
+      return request(app.getHttpServer()).get('/health').expect(200);
     });
 
     it('should return consistent status format', async () => {
@@ -93,18 +91,18 @@ describe('Health (e2e)', () => {
     });
 
     it('should be accessible without authentication', () => {
-      return request(app.getHttpServer())
-        .get('/health/ready')
-        .expect(200);
+      return request(app.getHttpServer()).get('/health/ready').expect(200);
     });
 
     it('should handle database disconnection gracefully', async () => {
       // Mock database query failure
-      prismaService.$queryRaw = jest.fn().mockRejectedValue(new Error('Connection failed'));
+      prismaService.$queryRaw = jest
+        .fn()
+        .mockRejectedValue(new Error('Connection failed'));
 
       const response = await request(app.getHttpServer())
         .get('/health/ready')
-        .expect(200);  // Still returns 200 but with different status
+        .expect(200); // Still returns 200 but with different status
 
       expect(response.body).toHaveProperty('status', 'not ready');
       expect(response.body.services).toHaveProperty('database', 'down');

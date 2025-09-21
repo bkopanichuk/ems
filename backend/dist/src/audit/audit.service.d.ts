@@ -44,14 +44,14 @@ export declare class AuditService {
             };
         } & {
             id: string;
-            createdAt: Date;
+            userId: string;
             action: string;
             entityType: string | null;
             entityId: string | null;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
             ipAddress: string | null;
             userAgent: string | null;
-            userId: string;
+            createdAt: Date;
         })[];
         meta: {
             total: number;

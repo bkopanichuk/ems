@@ -2,10 +2,16 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   constructor() {
     super({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      log:
+        process.env.NODE_ENV === 'development'
+          ? ['query', 'error', 'warn']
+          : ['error'],
     });
   }
 
@@ -22,7 +28,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       throw new Error('cleanDatabase is not allowed in production');
     }
 
-    const models = Reflect.ownKeys(this).filter((key) => key[0] !== '_' && key[0] !== '$');
+    const models = Reflect.ownKeys(this).filter(
+      (key) => key[0] !== '_' && key[0] !== '$',
+    );
 
     return Promise.all(
       models.map((modelKey) => {

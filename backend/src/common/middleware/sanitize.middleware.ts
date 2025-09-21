@@ -21,7 +21,7 @@ export class SanitizeMiddleware implements NestMiddleware {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeObject(item));
+      return obj.map((item) => this.sanitizeObject(item));
     }
 
     if (obj !== null && typeof obj === 'object') {
@@ -45,7 +45,10 @@ export class SanitizeMiddleware implements NestMiddleware {
     }
 
     // Remove any script tags (basic XSS protection)
-    str = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    str = str.replace(
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      '',
+    );
 
     // Trim whitespace
     str = str.trim();

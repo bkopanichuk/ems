@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -60,7 +64,11 @@ export class ProfileService {
     return updatedUser;
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto, userRole: Role) {
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+    userRole: Role,
+  ) {
     // Admin users cannot change their password (as per PRD)
     if (userRole === Role.ADMIN) {
       throw new ForbiddenException('Admins cannot change their password');
@@ -77,7 +85,10 @@ export class ProfileService {
       throw new UnauthorizedException('User not found');
     }
 
-    const isPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Current password is incorrect');

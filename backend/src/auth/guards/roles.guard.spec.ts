@@ -78,7 +78,9 @@ describe('RolesGuard', () => {
         }),
       } as unknown as ExecutionContext;
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([Role.ADMIN, Role.USER]);
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([Role.ADMIN, Role.USER]);
 
       const result = guard.canActivate(context);
 

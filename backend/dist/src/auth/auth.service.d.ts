@@ -39,9 +39,9 @@ export declare class AuthService {
     getActiveSessions(userId: string): Promise<{
         isCurrent: boolean;
         id: string;
-        createdAt: Date;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
         expiresAt: Date;
     }[]>;
     revokeSession(userId: string, sessionId: string): Promise<{
@@ -49,12 +49,12 @@ export declare class AuthService {
     }>;
     getProfile(userId: string): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         lastLoginAt: Date | null;
         loginCount: number;
-        createdAt: Date;
     }>;
     private generateTokens;
     private generateRefreshToken;

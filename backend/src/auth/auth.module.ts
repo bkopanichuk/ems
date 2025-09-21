@@ -19,7 +19,9 @@ import { AuditModule } from '../audit/audit.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get('JWT_ACCESS_EXPIRY', '15m') },
+        signOptions: {
+          expiresIn: configService.get('JWT_ACCESS_EXPIRY', '15m'),
+        },
       }),
       inject: [ConfigService],
     }),

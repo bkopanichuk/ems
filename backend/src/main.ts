@@ -15,10 +15,12 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Security headers
-  app.use(helmet({
-    contentSecurityPolicy: false, // Disable for API
-    crossOriginEmbedderPolicy: false,
-  }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: false, // Disable for API
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   // Compression
   app.use(compression());
@@ -32,23 +34,26 @@ async function bootstrap() {
   });
 
   // Global validation pipe with enhanced settings
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Strip properties that don't have decorators
-    transform: true, // Transform payloads to DTO instances
-    forbidNonWhitelisted: true, // Throw error on non-whitelisted properties
-    transformOptions: {
-      enableImplicitConversion: true, // Enable implicit type conversion
-    },
-    exceptionFactory: (errors) => {
-      const messages = errors.map(
-        (error) => `${error.property}: ${Object.values(error.constraints || {}).join(', ')}`,
-      );
-      return new BadRequestException({
-        message: 'Validation failed',
-        errors: messages,
-      });
-    },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip properties that don't have decorators
+      transform: true, // Transform payloads to DTO instances
+      forbidNonWhitelisted: true, // Throw error on non-whitelisted properties
+      transformOptions: {
+        enableImplicitConversion: true, // Enable implicit type conversion
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map(
+          (error) =>
+            `${error.property}: ${Object.values(error.constraints || {}).join(', ')}`,
+        );
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: messages,
+        });
+      },
+    }),
+  );
 
   // Global prefix
   app.setGlobalPrefix('api');

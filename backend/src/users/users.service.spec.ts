@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../database/prisma.service';
-import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 
@@ -140,7 +144,9 @@ describe('UsersService', () => {
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
       };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUserWithoutPassword);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        mockUserWithoutPassword,
+      );
 
       const result = await service.findOne('1');
 
@@ -218,7 +224,9 @@ describe('UsersService', () => {
       };
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException when login was previously used', async () => {
@@ -229,9 +237,13 @@ describe('UsersService', () => {
         role: Role.USER,
       };
       const deletedUser = { ...mockUser, deletedAt: new Date() };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(deletedUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        deletedUser,
+      );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -284,17 +296,17 @@ describe('UsersService', () => {
     it('should throw NotFoundException when user not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.update('999', { displayName: 'New Name' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('999', { displayName: 'New Name' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should not update deleted user', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.update('1', { displayName: 'New Name' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('1', { displayName: 'New Name' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -368,7 +380,9 @@ describe('UsersService', () => {
   describe('unblockUser', () => {
     it('should unblock user', async () => {
       const blockedUser = { ...mockUser, isBlocked: true };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(blockedUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        blockedUser,
+      );
       const unblockedUser = {
         id: mockUser.id,
         login: mockUser.login,
@@ -397,7 +411,9 @@ describe('UsersService', () => {
     it('should throw NotFoundException when user not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.unblockUser('999')).rejects.toThrow(NotFoundException);
+      await expect(service.unblockUser('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -428,8 +444,9 @@ describe('UsersService', () => {
     it('should throw NotFoundException when user not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.assignRole('999', Role.ADMIN)).rejects.toThrow(NotFoundException);
+      await expect(service.assignRole('999', Role.ADMIN)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
-
 });

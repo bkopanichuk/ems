@@ -6,20 +6,20 @@ export declare class UsersController {
     constructor(usersService: UsersService);
     create(createUserDto: CreateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
-        createdAt: Date;
     }>;
     findAll(page: number, limit: number): Promise<{
         data: {
             id: string;
+            createdAt: Date;
             login: string;
             displayName: string | null;
             role: import("@prisma/client").$Enums.Role;
             isBlocked: boolean;
-            createdAt: Date;
             updatedAt: Date;
         }[];
         meta: {
@@ -31,11 +31,11 @@ export declare class UsersController {
     findDeleted(page: number, limit: number): Promise<{
         data: {
             id: string;
+            createdAt: Date;
             login: string;
             displayName: string | null;
             role: import("@prisma/client").$Enums.Role;
             deletedAt: Date | null;
-            createdAt: Date;
         }[];
         meta: {
             total: number;
@@ -45,20 +45,20 @@ export declare class UsersController {
     }>;
     findOne(id: string): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     remove(id: string): Promise<{

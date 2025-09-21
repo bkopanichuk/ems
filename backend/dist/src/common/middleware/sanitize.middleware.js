@@ -20,7 +20,7 @@ let SanitizeMiddleware = class SanitizeMiddleware {
             return this.sanitizeString(obj);
         }
         if (Array.isArray(obj)) {
-            return obj.map(item => this.sanitizeObject(item));
+            return obj.map((item) => this.sanitizeObject(item));
         }
         if (obj !== null && typeof obj === 'object') {
             const sanitized = {};

@@ -53,7 +53,9 @@ describe('AuditService', () => {
         createdAt: new Date(),
       };
 
-      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(expectedLog);
+      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(
+        expectedLog,
+      );
 
       await service.log(logData);
 
@@ -105,7 +107,10 @@ describe('AuditService', () => {
 
       // Should not throw - audit logging failures shouldn't break the app
       await expect(service.log(logData)).resolves.not.toThrow();
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to create audit log:', expect.any(Error));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to create audit log:',
+        expect.any(Error),
+      );
     });
   });
 
@@ -144,7 +149,9 @@ describe('AuditService', () => {
         },
       ];
 
-      (prismaService.auditLog.findMany as jest.Mock).mockResolvedValue(mockLogs);
+      (prismaService.auditLog.findMany as jest.Mock).mockResolvedValue(
+        mockLogs,
+      );
       (prismaService.auditLog.count as jest.Mock).mockResolvedValue(2);
 
       const result = await service.getAuditLogs({
@@ -199,7 +206,9 @@ describe('AuditService', () => {
         },
       ];
 
-      (prismaService.auditLog.findMany as jest.Mock).mockResolvedValue(mockLogs);
+      (prismaService.auditLog.findMany as jest.Mock).mockResolvedValue(
+        mockLogs,
+      );
       (prismaService.auditLog.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.getAuditLogs({
@@ -305,7 +314,9 @@ describe('AuditService', () => {
   describe('cleanupOldLogs', () => {
     it('should delete logs older than retention period', async () => {
       const mockDeleteResult = { count: 150 };
-      (prismaService.auditLog.deleteMany as jest.Mock).mockResolvedValue(mockDeleteResult);
+      (prismaService.auditLog.deleteMany as jest.Mock).mockResolvedValue(
+        mockDeleteResult,
+      );
 
       const result = await service.cleanupOldLogs(30);
 
@@ -318,30 +329,38 @@ describe('AuditService', () => {
       });
 
       // Verify the date is approximately 30 days ago
-      const deleteCall = (prismaService.auditLog.deleteMany as jest.Mock).mock.calls[0][0];
+      const deleteCall = (prismaService.auditLog.deleteMany as jest.Mock).mock
+        .calls[0][0];
       const cutoffDate = deleteCall.where.createdAt.lt;
       const expectedDate = new Date();
       expectedDate.setDate(expectedDate.getDate() - 30);
 
       // Allow for small time differences
-      expect(Math.abs(cutoffDate.getTime() - expectedDate.getTime())).toBeLessThan(5000);
+      expect(
+        Math.abs(cutoffDate.getTime() - expectedDate.getTime()),
+      ).toBeLessThan(5000);
 
       expect(result).toEqual({ deleted: 150 });
     });
 
     it('should use default retention period of 90 days', async () => {
       const mockDeleteResult = { count: 50 };
-      (prismaService.auditLog.deleteMany as jest.Mock).mockResolvedValue(mockDeleteResult);
+      (prismaService.auditLog.deleteMany as jest.Mock).mockResolvedValue(
+        mockDeleteResult,
+      );
 
       await service.cleanupOldLogs();
 
-      const deleteCall = (prismaService.auditLog.deleteMany as jest.Mock).mock.calls[0][0];
+      const deleteCall = (prismaService.auditLog.deleteMany as jest.Mock).mock
+        .calls[0][0];
       const cutoffDate = deleteCall.where.createdAt.lt;
       const expectedDate = new Date();
       expectedDate.setDate(expectedDate.getDate() - 90);
 
       // Allow for small time differences
-      expect(Math.abs(cutoffDate.getTime() - expectedDate.getTime())).toBeLessThan(5000);
+      expect(
+        Math.abs(cutoffDate.getTime() - expectedDate.getTime()),
+      ).toBeLessThan(5000);
 
       expect((await service.cleanupOldLogs()).deleted).toBe(50);
     });
@@ -351,7 +370,9 @@ describe('AuditService', () => {
         new Error('Database error'),
       );
 
-      await expect(service.cleanupOldLogs(30)).rejects.toThrow('Database error');
+      await expect(service.cleanupOldLogs(30)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 });

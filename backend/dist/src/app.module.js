@@ -23,9 +23,7 @@ const health_module_1 = require("./health/health.module");
 const audit_module_1 = require("./audit/audit.module");
 let AppModule = class AppModule {
     configure(consumer) {
-        consumer
-            .apply(sanitize_middleware_1.SanitizeMiddleware)
-            .forRoutes('*');
+        consumer.apply(sanitize_middleware_1.SanitizeMiddleware).forRoutes('*');
     }
 };
 exports.AppModule = AppModule;

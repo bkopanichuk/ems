@@ -77,7 +77,10 @@ describe('AuthController', () => {
       const result = await authController.refresh(refreshDto, mockRequest);
 
       expect(result).toEqual(tokensResponse);
-      expect(authService.refreshToken).toHaveBeenCalledWith('valid-refresh-token', mockRequest);
+      expect(authService.refreshToken).toHaveBeenCalledWith(
+        'valid-refresh-token',
+        mockRequest,
+      );
     });
 
     it('should throw UnauthorizedException when refresh fails', async () => {
@@ -86,7 +89,9 @@ describe('AuthController', () => {
         new UnauthorizedException('Invalid refresh token'),
       );
 
-      await expect(authController.refresh(refreshDto, mockRequest)).rejects.toThrow(UnauthorizedException);
+      await expect(
+        authController.refresh(refreshDto, mockRequest),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -95,10 +100,18 @@ describe('AuthController', () => {
       const logoutResponse = { message: 'Logged out successfully' };
       (authService.logout as jest.Mock).mockResolvedValue(logoutResponse);
 
-      const result = await authController.logout('1', 'refresh-token', mockRequest);
+      const result = await authController.logout(
+        '1',
+        'refresh-token',
+        mockRequest,
+      );
 
       expect(result).toEqual(logoutResponse);
-      expect(authService.logout).toHaveBeenCalledWith('1', 'refresh-token', mockRequest);
+      expect(authService.logout).toHaveBeenCalledWith(
+        '1',
+        'refresh-token',
+        mockRequest,
+      );
     });
 
     it('should logout without refresh token', async () => {
@@ -108,7 +121,11 @@ describe('AuthController', () => {
       const result = await authController.logout('1', undefined, mockRequest);
 
       expect(result).toEqual(logoutResponse);
-      expect(authService.logout).toHaveBeenCalledWith('1', undefined, mockRequest);
+      expect(authService.logout).toHaveBeenCalledWith(
+        '1',
+        undefined,
+        mockRequest,
+      );
     });
   });
 
@@ -139,7 +156,9 @@ describe('AuthController', () => {
         new UnauthorizedException('User not found'),
       );
 
-      await expect(authController.getProfile('1')).rejects.toThrow(UnauthorizedException);
+      await expect(authController.getProfile('1')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -154,7 +173,9 @@ describe('AuthController', () => {
           userAgent: 'Mozilla',
         },
       ];
-      (authService.getActiveSessions as jest.Mock).mockResolvedValue(mockSessions);
+      (authService.getActiveSessions as jest.Mock).mockResolvedValue(
+        mockSessions,
+      );
 
       const result = await authController.getSessions('1');
 
@@ -166,7 +187,9 @@ describe('AuthController', () => {
   describe('revokeSession', () => {
     it('should revoke specific session', async () => {
       const revokeResponse = { message: 'Session revoked successfully' };
-      (authService.revokeSession as jest.Mock).mockResolvedValue(revokeResponse);
+      (authService.revokeSession as jest.Mock).mockResolvedValue(
+        revokeResponse,
+      );
 
       const req = {
         ...mockRequest,

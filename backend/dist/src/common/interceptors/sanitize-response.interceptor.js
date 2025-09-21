@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const operators_1 = require("rxjs/operators");
 let SanitizeResponseInterceptor = class SanitizeResponseInterceptor {
     intercept(context, next) {
-        return next.handle().pipe((0, operators_1.map)(data => this.sanitizeResponse(data)));
+        return next.handle().pipe((0, operators_1.map)((data) => this.sanitizeResponse(data)));
     }
     sanitizeResponse(data) {
         if (!data) {
@@ -32,7 +32,7 @@ let SanitizeResponseInterceptor = class SanitizeResponseInterceptor {
             return obj;
         }
         if (Array.isArray(obj)) {
-            return obj.map(item => this.removeSensitiveFields(item, fields));
+            return obj.map((item) => this.removeSensitiveFields(item, fields));
         }
         const cleaned = { ...obj };
         for (const field of fields) {
@@ -60,7 +60,7 @@ let SanitizeResponseInterceptor = class SanitizeResponseInterceptor {
         return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
     }
     toSnakeCase(str) {
-        return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
     }
 };
 exports.SanitizeResponseInterceptor = SanitizeResponseInterceptor;

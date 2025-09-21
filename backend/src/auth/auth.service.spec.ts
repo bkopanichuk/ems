@@ -4,7 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../database/prisma.service';
 import { AuditService, AuditAction } from '../audit/audit.service';
-import { UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
 
@@ -117,7 +121,11 @@ describe('AuthService', () => {
         lockedUntil: null,
       });
 
-      const result = await authService.validateUser('testuser', 'password', mockRequest);
+      const result = await authService.validateUser(
+        'testuser',
+        'password',
+        mockRequest,
+      );
 
       const { password, ...expectedUser } = mockUser;
       expect(result).toEqual(expectedUser);
@@ -133,7 +141,11 @@ describe('AuthService', () => {
     it('should return null when user does not exist', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
 
-      const result = await authService.validateUser('nonexistent', 'password', mockRequest);
+      const result = await authService.validateUser(
+        'nonexistent',
+        'password',
+        mockRequest,
+      );
 
       expect(result).toBeNull();
       expect(auditService.log).toHaveBeenCalledWith({
@@ -147,9 +159,15 @@ describe('AuthService', () => {
 
     it('should return null when user is soft deleted', async () => {
       const deletedUser = { ...mockUser, deletedAt: new Date() };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(deletedUser);
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        deletedUser,
+      );
 
-      const result = await authService.validateUser('testuser', 'password', mockRequest);
+      const result = await authService.validateUser(
+        'testuser',
+        'password',
+        mockRequest,
+      );
 
       expect(result).toBeNull();
       expect(auditService.log).toHaveBeenCalledWith({
@@ -169,7 +187,11 @@ describe('AuthService', () => {
         failedLoginAttempts: 1,
       });
 
-      const result = await authService.validateUser('testuser', 'wrongpassword', mockRequest);
+      const result = await authService.validateUser(
+        'testuser',
+        'wrongpassword',
+        mockRequest,
+      );
 
       expect(result).toBeNull();
       expect(prismaService.user.update).toHaveBeenCalledWith({
@@ -183,7 +205,9 @@ describe('AuthService', () => {
 
     it('should lock account after max failed attempts', async () => {
       const userWithFailedAttempts = { ...mockUser, failedLoginAttempts: 4 };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(userWithFailedAttempts);
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        userWithFailedAttempts,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
       (prismaService.user.update as jest.Mock).mockResolvedValue({
         ...userWithFailedAttempts,
@@ -191,18 +215,23 @@ describe('AuthService', () => {
         lockedUntil: new Date(Date.now() + 15 * 60 * 1000),
       });
 
-      await expect(authService.validateUser('testuser', 'wrongpassword', mockRequest)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        authService.validateUser('testuser', 'wrongpassword', mockRequest),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when account is locked', async () => {
-      const lockedUser = { ...mockUser, lockedUntil: new Date(Date.now() + 10000) };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(lockedUser);
-
-      await expect(authService.validateUser('testuser', 'password', mockRequest)).rejects.toThrow(
-        UnauthorizedException,
+      const lockedUser = {
+        ...mockUser,
+        lockedUntil: new Date(Date.now() + 10000),
+      };
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        lockedUser,
       );
+
+      await expect(
+        authService.validateUser('testuser', 'password', mockRequest),
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(auditService.log).toHaveBeenCalledWith({
         userId: lockedUser.id,
@@ -214,8 +243,13 @@ describe('AuthService', () => {
     });
 
     it('should process login if lockout period has expired', async () => {
-      const lockedUser = { ...mockUser, lockedUntil: new Date(Date.now() - 1000) };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(lockedUser);
+      const lockedUser = {
+        ...mockUser,
+        lockedUntil: new Date(Date.now() - 1000),
+      };
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        lockedUser,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (prismaService.user.update as jest.Mock).mockResolvedValue({
         ...lockedUser,
@@ -223,7 +257,11 @@ describe('AuthService', () => {
         failedLoginAttempts: 0,
       });
 
-      const result = await authService.validateUser('testuser', 'password', mockRequest);
+      const result = await authService.validateUser(
+        'testuser',
+        'password',
+        mockRequest,
+      );
 
       expect(result).toBeDefined();
       expect(prismaService.user.update).toHaveBeenCalledWith({
@@ -237,11 +275,13 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException when user is blocked', async () => {
       const blockedUser = { ...mockUser, isBlocked: true };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(blockedUser);
-
-      await expect(authService.validateUser('testuser', 'password', mockRequest)).rejects.toThrow(
-        UnauthorizedException,
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        blockedUser,
       );
+
+      await expect(
+        authService.validateUser('testuser', 'password', mockRequest),
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(auditService.log).toHaveBeenCalledWith({
         userId: blockedUser.id,
@@ -256,7 +296,9 @@ describe('AuthService', () => {
   describe('login', () => {
     it('should return access and refresh tokens', async () => {
       (jwtService.signAsync as jest.Mock).mockResolvedValue('access-token');
-      (authService as any).generateRefreshToken = jest.fn().mockReturnValue('refresh-token-uuid-123456789');
+      (authService as any).generateRefreshToken = jest
+        .fn()
+        .mockReturnValue('refresh-token-uuid-123456789');
       (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
       (prismaService.refreshToken.create as jest.Mock).mockResolvedValue({});
 
@@ -306,13 +348,20 @@ describe('AuthService', () => {
     };
 
     it('should return new tokens when refresh token is valid', async () => {
-      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(mockTokenRecord);
+      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(
+        mockTokenRecord,
+      );
       (prismaService.refreshToken.update as jest.Mock).mockResolvedValue({});
       (prismaService.refreshToken.create as jest.Mock).mockResolvedValue({});
       (jwtService.signAsync as jest.Mock).mockResolvedValue('new-access-token');
-      (authService as any).generateRefreshToken = jest.fn().mockReturnValue('new-refresh-token-uuid');
+      (authService as any).generateRefreshToken = jest
+        .fn()
+        .mockReturnValue('new-refresh-token-uuid');
 
-      const result = await authService.refreshToken('valid-refresh-token', mockRequest);
+      const result = await authService.refreshToken(
+        'valid-refresh-token',
+        mockRequest,
+      );
 
       expect(result).toEqual({
         access_token: 'new-access-token',
@@ -323,7 +372,9 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException when refresh token is invalid', async () => {
-      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(authService.refreshToken('invalid-token')).rejects.toThrow(
         UnauthorizedException,
@@ -332,39 +383,59 @@ describe('AuthService', () => {
 
     it('should throw ForbiddenException when token is revoked', async () => {
       const revokedToken = { ...mockTokenRecord, revokedAt: new Date() };
-      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(revokedToken);
-      (prismaService.refreshToken.updateMany as jest.Mock).mockResolvedValue({});
-
-      await expect(authService.refreshToken('valid-refresh-token')).rejects.toThrow(
-        ForbiddenException,
+      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(
+        revokedToken,
       );
+      (prismaService.refreshToken.updateMany as jest.Mock).mockResolvedValue(
+        {},
+      );
+
+      await expect(
+        authService.refreshToken('valid-refresh-token'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw UnauthorizedException when refresh token is expired', async () => {
-      const expiredToken = { ...mockTokenRecord, expiresAt: new Date(Date.now() - 86400000) };
-      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(expiredToken);
+      const expiredToken = {
+        ...mockTokenRecord,
+        expiresAt: new Date(Date.now() - 86400000),
+      };
+      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(
+        expiredToken,
+      );
       (prismaService.refreshToken.update as jest.Mock).mockResolvedValue({});
 
-      await expect(authService.refreshToken('valid-refresh-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        authService.refreshToken('valid-refresh-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when user is blocked', async () => {
-      const tokenWithBlockedUser = { ...mockTokenRecord, user: { ...mockUser, isBlocked: true } };
-      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(tokenWithBlockedUser);
-
-      await expect(authService.refreshToken('valid-refresh-token')).rejects.toThrow(
-        UnauthorizedException,
+      const tokenWithBlockedUser = {
+        ...mockTokenRecord,
+        user: { ...mockUser, isBlocked: true },
+      };
+      (prismaService.refreshToken.findUnique as jest.Mock).mockResolvedValue(
+        tokenWithBlockedUser,
       );
+
+      await expect(
+        authService.refreshToken('valid-refresh-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('logout', () => {
     it('should revoke refresh token', async () => {
-      (prismaService.refreshToken.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+      (prismaService.refreshToken.updateMany as jest.Mock).mockResolvedValue({
+        count: 1,
+      });
 
-      const result = await authService.logout('1', 'refresh-token', mockRequest);
+      const result = await authService.logout(
+        '1',
+        'refresh-token',
+        mockRequest,
+      );
 
       expect(result).toEqual({ message: 'Logged out successfully' });
       expect(prismaService.refreshToken.updateMany).toHaveBeenCalledWith({
@@ -380,7 +451,9 @@ describe('AuthService', () => {
 
   describe('logoutAll', () => {
     it('should revoke all refresh tokens', async () => {
-      (prismaService.refreshToken.updateMany as jest.Mock).mockResolvedValue({ count: 3 });
+      (prismaService.refreshToken.updateMany as jest.Mock).mockResolvedValue({
+        count: 3,
+      });
 
       const result = await authService.logoutAll('1', mockRequest);
 
@@ -406,7 +479,9 @@ describe('AuthService', () => {
         loginCount: 0,
         createdAt: mockUser.createdAt,
       };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(profileData);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        profileData,
+      );
 
       const result = await authService.getProfile('1');
 
@@ -431,7 +506,9 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException when user not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(authService.getProfile('999')).rejects.toThrow(UnauthorizedException);
+      await expect(authService.getProfile('999')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -446,7 +523,9 @@ describe('AuthService', () => {
           userAgent: 'Mozilla',
         },
       ];
-      (prismaService.refreshToken.findMany as jest.Mock).mockResolvedValue(mockSessions);
+      (prismaService.refreshToken.findMany as jest.Mock).mockResolvedValue(
+        mockSessions,
+      );
 
       const result = await authService.getActiveSessions('1');
 
@@ -479,7 +558,9 @@ describe('AuthService', () => {
         token: 'token',
         revokedAt: null,
       };
-      (prismaService.refreshToken.findFirst as jest.Mock).mockResolvedValue(mockSession);
+      (prismaService.refreshToken.findFirst as jest.Mock).mockResolvedValue(
+        mockSession,
+      );
       (prismaService.refreshToken.update as jest.Mock).mockResolvedValue({});
 
       const result = await authService.revokeSession('1', 'session-1');
@@ -492,11 +573,13 @@ describe('AuthService', () => {
     });
 
     it('should throw BadRequestException when session not found', async () => {
-      (prismaService.refreshToken.findFirst as jest.Mock).mockResolvedValue(null);
-
-      await expect(authService.revokeSession('1', 'invalid-session')).rejects.toThrow(
-        BadRequestException,
+      (prismaService.refreshToken.findFirst as jest.Mock).mockResolvedValue(
+        null,
       );
+
+      await expect(
+        authService.revokeSession('1', 'invalid-session'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

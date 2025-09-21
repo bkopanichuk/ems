@@ -99,9 +99,13 @@ describe('UsersController', () => {
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (service.findOne as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
+      (service.findOne as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.findOne('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -171,7 +175,9 @@ describe('UsersController', () => {
     });
 
     it('should handle deletion errors', async () => {
-      (service.remove as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
+      (service.remove as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
       await expect(controller.remove('999')).rejects.toThrow(NotFoundException);
     });
@@ -185,9 +191,13 @@ describe('UsersController', () => {
     });
 
     it('should handle blocking errors', async () => {
-      (service.blockUser as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
+      (service.blockUser as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.blockUser('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.blockUser('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -203,7 +213,9 @@ describe('UsersController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.unblockUser('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.unblockUser('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -237,7 +249,9 @@ describe('UsersController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.restore('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.restore('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

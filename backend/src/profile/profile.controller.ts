@@ -37,6 +37,10 @@ export class ProfileController {
     @CurrentUser('role') userRole: string,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return this.profileService.changePassword(userId, changePasswordDto, userRole as any);
+    return this.profileService.changePassword(
+      userId,
+      changePasswordDto,
+      userRole as any,
+    );
   }
 }

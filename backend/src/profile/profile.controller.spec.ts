@@ -48,9 +48,13 @@ describe('ProfileController', () => {
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (service.getProfile as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
+      (service.getProfile as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.getProfile('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.getProfile('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -91,18 +95,22 @@ describe('ProfileController', () => {
   describe('changePassword', () => {
     it('should change password successfully', async () => {
       const changePasswordDto = {
-        oldPassword: 'oldPass123',
+        currentPassword: 'oldPass123',
         newPassword: 'newPass123',
       };
 
       await controller.changePassword('1', Role.USER, changePasswordDto);
 
-      expect(service.changePassword).toHaveBeenCalledWith('1', changePasswordDto, Role.USER);
+      expect(service.changePassword).toHaveBeenCalledWith(
+        '1',
+        changePasswordDto,
+        Role.USER,
+      );
     });
 
     it('should throw BadRequestException when old password is incorrect', async () => {
       const changePasswordDto = {
-        oldPassword: 'wrongPass',
+        currentPassword: 'wrongPass',
         newPassword: 'newPass123',
       };
       (service.changePassword as jest.Mock).mockRejectedValue(
@@ -116,7 +124,7 @@ describe('ProfileController', () => {
 
     it('should throw BadRequestException when admin tries to change password', async () => {
       const changePasswordDto = {
-        oldPassword: 'oldPass123',
+        currentPassword: 'oldPass123',
         newPassword: 'newPass123',
       };
       (service.changePassword as jest.Mock).mockRejectedValue(
@@ -130,7 +138,7 @@ describe('ProfileController', () => {
 
     it('should throw NotFoundException when user not found', async () => {
       const changePasswordDto = {
-        oldPassword: 'oldPass123',
+        currentPassword: 'oldPass123',
         newPassword: 'newPass123',
       };
       (service.changePassword as jest.Mock).mockRejectedValue(

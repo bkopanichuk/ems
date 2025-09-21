@@ -35,7 +35,9 @@ describe('PrismaService', () => {
 
   describe('onModuleDestroy', () => {
     it('should disconnect from database on module destroy', async () => {
-      const disconnectSpy = jest.spyOn(service, '$disconnect').mockResolvedValue();
+      const disconnectSpy = jest
+        .spyOn(service, '$disconnect')
+        .mockResolvedValue();
 
       await service.onModuleDestroy();
 
@@ -46,7 +48,9 @@ describe('PrismaService', () => {
       const error = new Error('Disconnection failed');
       jest.spyOn(service, '$disconnect').mockRejectedValue(error);
 
-      await expect(service.onModuleDestroy()).rejects.toThrow('Disconnection failed');
+      await expect(service.onModuleDestroy()).rejects.toThrow(
+        'Disconnection failed',
+      );
     });
   });
 
@@ -55,7 +59,9 @@ describe('PrismaService', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
-      await expect(service.cleanDatabase()).rejects.toThrow('cleanDatabase is not allowed in production');
+      await expect(service.cleanDatabase()).rejects.toThrow(
+        'cleanDatabase is not allowed in production',
+      );
 
       process.env.NODE_ENV = originalEnv;
     });
@@ -65,7 +71,9 @@ describe('PrismaService', () => {
       process.env.NODE_ENV = 'test';
 
       // Mock the cleanDatabase method itself instead of trying to mock internal properties
-      const cleanDatabaseSpy = jest.spyOn(service, 'cleanDatabase').mockResolvedValue([]);
+      const cleanDatabaseSpy = jest
+        .spyOn(service, 'cleanDatabase')
+        .mockResolvedValue([]);
 
       // Call a mocked version
       await service.cleanDatabase();

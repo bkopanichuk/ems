@@ -3,7 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
-  Inject
+  Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -31,7 +31,11 @@ export class AuthService {
     private auditService: AuditService,
   ) {}
 
-  async validateUser(login: string, password: string, request?: Request): Promise<any> {
+  async validateUser(
+    login: string,
+    password: string,
+    request?: Request,
+  ): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { login },
     });
@@ -41,7 +45,10 @@ export class AuthService {
       await this.auditService.log({
         userId: user?.id || 'unknown',
         action: AuditAction.LOGIN_FAILED,
-        metadata: { login, reason: user?.deletedAt ? 'user_deleted' : 'user_not_found' },
+        metadata: {
+          login,
+          reason: user?.deletedAt ? 'user_deleted' : 'user_not_found',
+        },
         ipAddress: this.getIpAddress(request),
         userAgent: request?.headers['user-agent'],
       });
@@ -104,7 +111,9 @@ export class AuthService {
       });
 
       if (lockedUntil) {
-        throw new UnauthorizedException('Account locked due to too many failed attempts');
+        throw new UnauthorizedException(
+          'Account locked due to too many failed attempts',
+        );
       }
 
       return null;
@@ -139,7 +148,7 @@ export class AuthService {
     const refreshTokenExpiry = new Date();
     refreshTokenExpiry.setDate(
       refreshTokenExpiry.getDate() +
-      parseInt(this.configService.get('JWT_REFRESH_EXPIRY_DAYS', '7'))
+        parseInt(this.configService.get('JWT_REFRESH_EXPIRY_DAYS', '7')),
     );
 
     await this.prisma.refreshToken.create({
@@ -219,7 +228,7 @@ export class AuthService {
     const refreshTokenExpiry = new Date();
     refreshTokenExpiry.setDate(
       refreshTokenExpiry.getDate() +
-      parseInt(this.configService.get('JWT_REFRESH_EXPIRY_DAYS', '7'))
+        parseInt(this.configService.get('JWT_REFRESH_EXPIRY_DAYS', '7')),
     );
 
     await this.prisma.refreshToken.create({
@@ -297,7 +306,7 @@ export class AuthService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return sessions.map(session => ({
+    return sessions.map((session) => ({
       ...session,
       isCurrent: false, // Will be set by controller based on current token
     }));
@@ -388,8 +397,8 @@ export class AuthService {
     if (!request) return undefined;
 
     return (
-      request.headers['x-forwarded-for'] as string ||
-      request.headers['x-real-ip'] as string ||
+      (request.headers['x-forwarded-for'] as string) ||
+      (request.headers['x-real-ip'] as string) ||
       request.connection?.remoteAddress ||
       request.ip
     );

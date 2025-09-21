@@ -30,7 +30,9 @@ describe('JwtAuthGuard', () => {
   });
 
   describe('canActivate', () => {
-    const createMockExecutionContext = (hasAuth: boolean = true): ExecutionContext => {
+    const createMockExecutionContext = (
+      hasAuth: boolean = true,
+    ): ExecutionContext => {
       return {
         getHandler: jest.fn(),
         getClass: jest.fn(),

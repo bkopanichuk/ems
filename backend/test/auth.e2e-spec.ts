@@ -1,4 +1,8 @@
-import { INestApplication, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  INestApplication,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 const request = require('supertest');
 import { createTestingApp, mockAuthUser, mockAdminUser } from './test-utils';
 import { PrismaService } from '../src/database/prisma.service';
@@ -25,7 +29,7 @@ describe('Auth (e2e)', () => {
 
   beforeEach(async () => {
     // Small delay to avoid rate limiting issues in tests
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   describe('/auth/login (POST) - Authentication', () => {
@@ -155,9 +159,9 @@ describe('Auth (e2e)', () => {
     it('should fail with invalid refresh token', async () => {
       // Mock the auth service to throw for invalid token
       const authService = app.get(AuthService);
-      authService.refreshToken = jest.fn().mockRejectedValue(
-        new UnauthorizedException('Invalid refresh token')
-      );
+      authService.refreshToken = jest
+        .fn()
+        .mockRejectedValue(new UnauthorizedException('Invalid refresh token'));
 
       await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -170,9 +174,9 @@ describe('Auth (e2e)', () => {
     it('should fail with expired refresh token', async () => {
       // Mock the auth service to throw for expired token
       const authService = app.get(AuthService);
-      authService.refreshToken = jest.fn().mockRejectedValue(
-        new UnauthorizedException('Token expired')
-      );
+      authService.refreshToken = jest
+        .fn()
+        .mockRejectedValue(new UnauthorizedException('Token expired'));
 
       await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -185,9 +189,9 @@ describe('Auth (e2e)', () => {
     it('should fail with revoked refresh token', async () => {
       // Mock the auth service to throw for revoked token
       const authService = app.get(AuthService);
-      authService.refreshToken = jest.fn().mockRejectedValue(
-        new ForbiddenException('Token revoked')
-      );
+      authService.refreshToken = jest
+        .fn()
+        .mockRejectedValue(new ForbiddenException('Token revoked'));
 
       await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -240,9 +244,7 @@ describe('Auth (e2e)', () => {
     });
 
     it('should require authentication', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/logout-all')
-        .expect(401);
+      await request(app.getHttpServer()).post('/auth/logout-all').expect(401);
     });
   });
 });

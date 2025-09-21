@@ -7,7 +7,8 @@ export class LoginDto {
   @IsNotEmpty()
   @Length(3, 50)
   @Matches(/^[a-zA-Z0-9_-]+$/, {
-    message: 'Login must contain only letters, numbers, underscores, and hyphens',
+    message:
+      'Login must contain only letters, numbers, underscores, and hyphens',
   })
   login: string;
 

@@ -64,9 +64,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should require authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/users')
-        .expect(401);
+      await request(app.getHttpServer()).get('/users').expect(401);
     });
 
     it('should require admin role', async () => {

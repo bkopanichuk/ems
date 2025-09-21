@@ -67,7 +67,9 @@ describe('ProfileService', () => {
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
       };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(userWithoutPassword);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        userWithoutPassword,
+      );
 
       const result = await service.getProfile('1');
 
@@ -91,13 +93,17 @@ describe('ProfileService', () => {
     it('should throw UnauthorizedException when user not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getProfile('999')).rejects.toThrow(UnauthorizedException);
+      await expect(service.getProfile('999')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException when user is soft deleted', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getProfile('1')).rejects.toThrow(UnauthorizedException);
+      await expect(service.getProfile('1')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -114,7 +120,9 @@ describe('ProfileService', () => {
       };
       (prismaService.user.update as jest.Mock).mockResolvedValue(updatedUser);
 
-      const result = await service.updateProfile('1', { displayName: 'New Display Name' });
+      const result = await service.updateProfile('1', {
+        displayName: 'New Display Name',
+      });
 
       expect(result).toEqual(updatedUser);
       expect(prismaService.user.update).toHaveBeenCalledWith({
@@ -134,17 +142,17 @@ describe('ProfileService', () => {
     it('should throw UnauthorizedException when user not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.updateProfile('999', { displayName: 'New Name' })).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.updateProfile('999', { displayName: 'New Name' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when user is soft deleted', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.updateProfile('1', { displayName: 'New Name' })).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.updateProfile('1', { displayName: 'New Name' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should handle empty update', async () => {
@@ -175,15 +183,25 @@ describe('ProfileService', () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (bcrypt.hash as jest.Mock).mockResolvedValue('newHashedPassword');
-      (prismaService.user.update as jest.Mock).mockResolvedValue({ ...mockUser, password: 'newHashedPassword' });
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        password: 'newHashedPassword',
+      });
 
-      const result = await service.changePassword('1', {
-        currentPassword: 'oldPass123',
-        newPassword: 'newPass123',
-      }, Role.USER);
+      const result = await service.changePassword(
+        '1',
+        {
+          currentPassword: 'oldPass123',
+          newPassword: 'newPass123',
+        },
+        Role.USER,
+      );
 
       expect(result).toEqual({ message: 'Password changed successfully' });
-      expect(bcrypt.compare).toHaveBeenCalledWith('oldPass123', mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'oldPass123',
+        mockUser.password,
+      );
       expect(bcrypt.hash).toHaveBeenCalledWith('newPass123', 10);
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
@@ -193,10 +211,14 @@ describe('ProfileService', () => {
 
     it('should throw ForbiddenException when admin tries to change password', async () => {
       await expect(
-        service.changePassword('2', {
-          currentPassword: 'oldPass123',
-          newPassword: 'newPass123',
-        }, Role.ADMIN),
+        service.changePassword(
+          '2',
+          {
+            currentPassword: 'oldPass123',
+            newPassword: 'newPass123',
+          },
+          Role.ADMIN,
+        ),
       ).rejects.toThrow(ForbiddenException);
 
       // Should not even check the user
@@ -207,10 +229,14 @@ describe('ProfileService', () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        service.changePassword('999', {
-          currentPassword: 'oldPass123',
-          newPassword: 'newPass123',
-        }, Role.USER),
+        service.changePassword(
+          '999',
+          {
+            currentPassword: 'oldPass123',
+            newPassword: 'newPass123',
+          },
+          Role.USER,
+        ),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -218,10 +244,14 @@ describe('ProfileService', () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        service.changePassword('1', {
-          currentPassword: 'oldPass123',
-          newPassword: 'newPass123',
-        }, Role.USER),
+        service.changePassword(
+          '1',
+          {
+            currentPassword: 'oldPass123',
+            newPassword: 'newPass123',
+          },
+          Role.USER,
+        ),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -230,13 +260,20 @@ describe('ProfileService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
-        service.changePassword('1', {
-          currentPassword: 'wrongPassword',
-          newPassword: 'newPass123',
-        }, Role.USER),
+        service.changePassword(
+          '1',
+          {
+            currentPassword: 'wrongPassword',
+            newPassword: 'newPass123',
+          },
+          Role.USER,
+        ),
       ).rejects.toThrow(UnauthorizedException);
 
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrongPassword', mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'wrongPassword',
+        mockUser.password,
+      );
       expect(prismaService.user.update).not.toHaveBeenCalled();
     });
   });

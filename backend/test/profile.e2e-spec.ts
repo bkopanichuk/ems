@@ -1,4 +1,8 @@
-import { INestApplication, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import {
+  INestApplication,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 const request = require('supertest');
 import { createTestingApp, mockAuthUser } from './test-utils';
 import { PrismaService } from '../src/database/prisma.service';
@@ -47,9 +51,7 @@ describe('Profile (e2e)', () => {
     });
 
     it('should require authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/profile')
-        .expect(401);
+      await request(app.getHttpServer()).get('/profile').expect(401);
     });
   });
 
@@ -119,9 +121,11 @@ describe('Profile (e2e)', () => {
 
     it('should fail with incorrect old password', async () => {
       const profileService = app.get(ProfileService);
-      profileService.changePassword = jest.fn().mockRejectedValue(
-        new UnauthorizedException('Current password is incorrect')
-      );
+      profileService.changePassword = jest
+        .fn()
+        .mockRejectedValue(
+          new UnauthorizedException('Current password is incorrect'),
+        );
 
       await request(app.getHttpServer())
         .post('/profile/change-password')
@@ -165,9 +169,13 @@ describe('Profile (e2e)', () => {
 
     it('should not allow admin to change password', async () => {
       const profileService = app.get(ProfileService);
-      profileService.changePassword = jest.fn().mockRejectedValue(
-        new ForbiddenException('Administrators cannot change passwords via this endpoint')
-      );
+      profileService.changePassword = jest
+        .fn()
+        .mockRejectedValue(
+          new ForbiddenException(
+            'Administrators cannot change passwords via this endpoint',
+          ),
+        );
 
       await request(app.getHttpServer())
         .post('/profile/change-password')

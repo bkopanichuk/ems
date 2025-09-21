@@ -7,18 +7,18 @@ export declare class ProfileService {
     constructor(prisma: PrismaService);
     getProfile(userId: string): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
-        createdAt: Date;
         updatedAt: Date;
     }>;
     changePassword(userId: string, changePasswordDto: ChangePasswordDto, userRole: Role): Promise<{

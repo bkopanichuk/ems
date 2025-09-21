@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -21,7 +26,9 @@ export class UsersService {
 
     if (existingUser) {
       if (existingUser.deletedAt) {
-        throw new ConflictException('This login was previously used. Please choose a different login.');
+        throw new ConflictException(
+          'This login was previously used. Please choose a different login.',
+        );
       }
       throw new ConflictException('User with this login already exists');
     }
@@ -300,10 +307,7 @@ export class UsersService {
     return restoredUser;
   }
 
-  async findDeleted(params?: {
-    skip?: number;
-    take?: number;
-  }) {
+  async findDeleted(params?: { skip?: number; take?: number }) {
     const { skip = 0, take = 10 } = params || {};
 
     const [users, total] = await Promise.all([

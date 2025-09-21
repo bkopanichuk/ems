@@ -10,9 +10,7 @@ import { map } from 'rxjs/operators';
 @Injectable()
 export class SanitizeResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      map(data => this.sanitizeResponse(data)),
-    );
+    return next.handle().pipe(map((data) => this.sanitizeResponse(data)));
   }
 
   private sanitizeResponse(data: any): any {
@@ -41,7 +39,7 @@ export class SanitizeResponseInterceptor implements NestInterceptor {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.removeSensitiveFields(item, fields));
+      return obj.map((item) => this.removeSensitiveFields(item, fields));
     }
 
     const cleaned = { ...obj };
@@ -78,6 +76,6 @@ export class SanitizeResponseInterceptor implements NestInterceptor {
   }
 
   private toSnakeCase(str: string): string {
-    return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
   }
 }

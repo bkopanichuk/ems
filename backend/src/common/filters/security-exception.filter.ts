@@ -33,7 +33,10 @@ export class SecurityExceptionFilter implements ExceptionFilter {
       }
 
       // Log security-related errors
-      if (status === HttpStatus.UNAUTHORIZED || status === HttpStatus.FORBIDDEN) {
+      if (
+        status === HttpStatus.UNAUTHORIZED ||
+        status === HttpStatus.FORBIDDEN
+      ) {
         this.logger.warn({
           message: 'Security exception',
           path: request.url,

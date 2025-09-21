@@ -28,7 +28,8 @@ let SecurityExceptionFilter = SecurityExceptionFilter_1 = class SecurityExceptio
             else {
                 message = exceptionResponse.toString();
             }
-            if (status === common_1.HttpStatus.UNAUTHORIZED || status === common_1.HttpStatus.FORBIDDEN) {
+            if (status === common_1.HttpStatus.UNAUTHORIZED ||
+                status === common_1.HttpStatus.FORBIDDEN) {
                 this.logger.warn({
                     message: 'Security exception',
                     path: request.url,

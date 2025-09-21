@@ -71,7 +71,10 @@ let AuthService = class AuthService {
             await this.auditService.log({
                 userId: user?.id || 'unknown',
                 action: audit_service_1.AuditAction.LOGIN_FAILED,
-                metadata: { login, reason: user?.deletedAt ? 'user_deleted' : 'user_not_found' },
+                metadata: {
+                    login,
+                    reason: user?.deletedAt ? 'user_deleted' : 'user_not_found',
+                },
                 ipAddress: this.getIpAddress(request),
                 userAgent: request?.headers['user-agent'],
             });
@@ -274,7 +277,7 @@ let AuthService = class AuthService {
             },
             orderBy: { createdAt: 'desc' },
         });
-        return sessions.map(session => ({
+        return sessions.map((session) => ({
             ...session,
             isCurrent: false,
         }));

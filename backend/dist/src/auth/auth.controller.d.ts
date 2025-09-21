@@ -30,19 +30,19 @@ export declare class AuthController {
     }>;
     getProfile(userId: string): Promise<{
         id: string;
+        createdAt: Date;
         login: string;
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         lastLoginAt: Date | null;
         loginCount: number;
-        createdAt: Date;
     }>;
     getSessions(userId: string): Promise<{
         isCurrent: boolean;
         id: string;
-        createdAt: Date;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
         expiresAt: Date;
     }[]>;
     revokeSession(userId: string, req: any): Promise<{

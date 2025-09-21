@@ -1,5 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, UnauthorizedException, BadRequestException, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  UnauthorizedException,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/database/prisma.service';
@@ -37,7 +45,7 @@ class MockLocalAuthGuard {
 
     // Validate that login and password are provided
     if (!login || !password) {
-      const messages = [];
+      const messages: string[] = [];
       if (!login) messages.push('login should not be empty');
       if (!password) messages.push('password should not be empty');
       throw new BadRequestException(messages);
@@ -83,12 +91,14 @@ export function createTestingApp(): Promise<INestApplication> {
     .overrideProvider(APP_GUARD)
     .useValue([])
     .compile()
-    .then(moduleFixture => {
+    .then((moduleFixture) => {
       const app = moduleFixture.createNestApplication();
-      app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
-        transform: true,
-      }));
+      app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,
+          transform: true,
+        }),
+      );
       return app.init();
     });
 }
@@ -156,15 +166,17 @@ export const mockAdminUser = {
 
 export function createMockAuthService() {
   return {
-    validateUser: jest.fn().mockImplementation((login: string, password: string) => {
-      if (login === 'testuser' && password === 'password123') {
-        return mockAuthUser;
-      }
-      if (login === 'admin' && password === 'adminpass') {
-        return mockAdminUser;
-      }
-      return null;
-    }),
+    validateUser: jest
+      .fn()
+      .mockImplementation((login: string, password: string) => {
+        if (login === 'testuser' && password === 'password123') {
+          return mockAuthUser;
+        }
+        if (login === 'admin' && password === 'adminpass') {
+          return mockAdminUser;
+        }
+        return null;
+      }),
     login: jest.fn().mockImplementation((user: any) => ({
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
@@ -182,7 +194,9 @@ export function createMockAuthService() {
       token_type: 'Bearer',
     })),
     logout: jest.fn().mockResolvedValue({ message: 'Logged out successfully' }),
-    logoutAll: jest.fn().mockResolvedValue({ message: 'Logged out from all devices' }),
+    logoutAll: jest
+      .fn()
+      .mockResolvedValue({ message: 'Logged out from all devices' }),
     getProfile: jest.fn().mockImplementation((userId: string) => {
       if (userId === 'test-user-id') return mockAuthUser;
       if (userId === 'admin-user-id') return mockAdminUser;
@@ -220,19 +234,35 @@ export function createMockProfileService() {
     }),
     updateProfile: jest.fn().mockImplementation((userId: string, data: any) => {
       // Validate display name length
-      if (data.displayName && (data.displayName.length < 2 || data.displayName.length > 100)) {
-        throw new BadRequestException('Display name must be between 2 and 100 characters');
+      if (
+        data.displayName &&
+        (data.displayName.length < 2 || data.displayName.length > 100)
+      ) {
+        throw new BadRequestException(
+          'Display name must be between 2 and 100 characters',
+        );
       }
       return Promise.resolve({
         id: userId === 'admin-user-id' ? mockAdminUser.id : mockAuthUser.id,
-        login: userId === 'admin-user-id' ? mockAdminUser.login : mockAuthUser.login,
-        displayName: data.displayName || (userId === 'admin-user-id' ? mockAdminUser.displayName : mockAuthUser.displayName),
-        role: userId === 'admin-user-id' ? mockAdminUser.role : mockAuthUser.role,
-        createdAt: userId === 'admin-user-id' ? mockAdminUser.createdAt : mockAuthUser.createdAt,
+        login:
+          userId === 'admin-user-id' ? mockAdminUser.login : mockAuthUser.login,
+        displayName:
+          data.displayName ||
+          (userId === 'admin-user-id'
+            ? mockAdminUser.displayName
+            : mockAuthUser.displayName),
+        role:
+          userId === 'admin-user-id' ? mockAdminUser.role : mockAuthUser.role,
+        createdAt:
+          userId === 'admin-user-id'
+            ? mockAdminUser.createdAt
+            : mockAuthUser.createdAt,
         updatedAt: new Date(),
       });
     }),
-    changePassword: jest.fn().mockResolvedValue({ message: 'Password changed successfully' }),
+    changePassword: jest
+      .fn()
+      .mockResolvedValue({ message: 'Password changed successfully' }),
   };
 }
 
@@ -291,9 +321,9 @@ export function createMockUsersService() {
       });
     }),
     update: jest.fn().mockImplementation((id: string, data: any) => ({
-      id,
       ...mockAuthUser,
       ...data,
+      id,
       updatedAt: new Date(),
     })),
     assignRole: jest.fn().mockImplementation((id: string, role: string) => {
@@ -332,11 +362,16 @@ export function createMockUsersService() {
       deletedAt: null,
       updatedAt: new Date(),
     })),
-    forceDelete: jest.fn().mockResolvedValue({ message: 'User permanently deleted' }),
+    forceDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'User permanently deleted' }),
   };
 }
 
-export async function createAuthToken(app: INestApplication, user = mockAuthUser): Promise<string> {
+export async function createAuthToken(
+  app: INestApplication,
+  user = mockAuthUser,
+): Promise<string> {
   // Mock a valid JWT token for testing
   return 'Bearer mock-jwt-token';
 }
