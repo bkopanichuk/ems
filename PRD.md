@@ -1,5 +1,7 @@
 PRD
 
+EMS - energy management system
+
 0) Objective
 
 Deliver a clean, production-grade skeleton of a web application to be extended later. Requirements:
@@ -11,6 +13,8 @@ Frontend: Vue3 (Quasar) + TypeScript; Composition API; FSD inside components/.
 Deployment: docker-compose for both dev and prod.
 
 Code: maintainable, tested, and written to industry standards.
+
+Uptime: 100%
 
 1) Personas & Roles
 
