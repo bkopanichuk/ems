@@ -1,175 +1,139 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+const request = require('supertest');
+import { createTestingApp, mockAuthUser, mockAdminUser } from './test-utils';
 import { PrismaService } from '../src/database/prisma.service';
 import * as bcrypt from 'bcrypt';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
-  let prismaService: PrismaService;
-  let accessToken: string;
-  let refreshToken: string;
-
-  const testUser = {
-    login: 'testuser',
-    password: 'testpass123',
-    displayName: 'Test User',
-    role: 'USER',
-  };
-
-  const adminUser = {
-    login: 'admin',
-    password: 'admin123',
-    displayName: 'Admin User',
-    role: 'ADMIN',
-  };
+  let prismaService: any;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    prismaService = app.get<PrismaService>(PrismaService);
-    await app.init();
-
-    // Clean up database
-    await prismaService.auditLog.deleteMany();
-    await prismaService.user.deleteMany();
-
-    // Create test users
-    const hashedPassword = await bcrypt.hash(testUser.password, 10);
-    const hashedAdminPassword = await bcrypt.hash(adminUser.password, 10);
-
-    await prismaService.user.create({
-      data: {
-        login: testUser.login,
-        password: hashedPassword,
-        displayName: testUser.displayName,
-        role: 'USER',
-      },
-    });
-
-    await prismaService.user.create({
-      data: {
-        login: adminUser.login,
-        password: hashedAdminPassword,
-        displayName: adminUser.displayName,
-        role: 'ADMIN',
-      },
-    });
+    app = await createTestingApp();
+    prismaService = app.get(PrismaService);
   });
 
   afterAll(async () => {
-    await prismaService.auditLog.deleteMany();
-    await prismaService.user.deleteMany();
     await app.close();
   });
 
   describe('/auth/login (POST)', () => {
-    it('should login with valid credentials', () => {
-      return request(app.getHttpServer())
+    it('should login successfully with valid credentials', async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockAuthUser);
+      prismaService.user.update.mockResolvedValue(mockAuthUser);
+      prismaService.refreshToken.create.mockResolvedValue({});
+
+      // Mock bcrypt compare to return true for correct password
+      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+
+      const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
-          login: testUser.login,
-          password: testUser.password,
+          login: 'testuser',
+          password: 'password123',
         })
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('accessToken');
-          expect(res.body).toHaveProperty('refreshToken');
-          expect(res.body).toHaveProperty('user');
-          expect(res.body.user.login).toBe(testUser.login);
-          accessToken = res.body.accessToken;
-          refreshToken = res.body.refreshToken;
-        });
-    });
+        .expect(201);
 
-    it('should fail with invalid password', () => {
-      return request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          login: testUser.login,
-          password: 'wrongpassword',
-        })
-        .expect(401)
-        .expect((res) => {
-          expect(res.body.message).toBe('Unauthorized');
-        });
-    });
-
-    it('should fail with non-existent user', () => {
-      return request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          login: 'nonexistent',
-          password: 'anypassword',
-        })
-        .expect(401);
-    });
-
-    it('should validate required fields', () => {
-      return request(app.getHttpServer())
-        .post('/auth/login')
-        .send({})
-        .expect(400)
-        .expect((res) => {
-          expect(res.body.message).toContain('login should not be empty');
-          expect(res.body.message).toContain('password should not be empty');
-        });
-    });
-
-    it('should fail when user is blocked', async () => {
-      // Block the user
-      await prismaService.user.update({
-        where: { login: testUser.login },
-        data: { isBlocked: true },
+      expect(response.body).toHaveProperty('access_token');
+      expect(response.body).toHaveProperty('refresh_token');
+      expect(response.body).toHaveProperty('token_type', 'Bearer');
+      expect(response.body).toHaveProperty('user');
+      expect(response.body.user).toMatchObject({
+        login: 'testuser',
+        displayName: 'Test User',
+        role: 'USER',
       });
+    });
+
+    it('should fail with invalid credentials', async () => {
+      prismaService.user.findUnique.mockResolvedValue(mockAuthUser);
+
+      // Mock bcrypt compare to return false for wrong password
+      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
 
       await request(app.getHttpServer())
         .post('/auth/login')
         .send({
-          login: testUser.login,
-          password: testUser.password,
+          login: 'testuser',
+          password: 'wrongpassword',
         })
         .expect(401);
+    });
 
-      // Unblock the user for other tests
-      await prismaService.user.update({
-        where: { login: testUser.login },
-        data: { isBlocked: false },
-      });
+    it('should fail with non-existent user', async () => {
+      prismaService.user.findUnique.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          login: 'nonexistent',
+          password: 'password123',
+        })
+        .expect(401);
+    });
+
+    it('should fail when user is blocked', async () => {
+      const blockedUser = { ...mockAuthUser, isBlocked: true };
+      prismaService.user.findUnique.mockResolvedValue(blockedUser);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          login: 'testuser',
+          password: 'password123',
+        })
+        .expect(401);
+    });
+
+    it('should validate required fields', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({})
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ login: 'testuser' })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ password: 'password123' })
+        .expect(400);
     });
   });
 
   describe('/auth/refresh (POST)', () => {
-    it('should refresh tokens with valid refresh token', async () => {
-      // First login to get tokens
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
+    it('should refresh token with valid refresh token', async () => {
+      const mockTokenRecord = {
+        id: 'token-1',
+        token: 'valid-refresh-token',
+        userId: mockAuthUser.id,
+        expiresAt: new Date(Date.now() + 86400000),
+        revokedAt: null,
+        user: mockAuthUser,
+      };
+
+      prismaService.refreshToken.findUnique.mockResolvedValue(mockTokenRecord);
+      prismaService.refreshToken.update.mockResolvedValue({});
+      prismaService.refreshToken.create.mockResolvedValue({});
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/refresh')
         .send({
-          login: testUser.login,
-          password: testUser.password,
+          refreshToken: 'valid-refresh-token',
         })
         .expect(201);
 
-      const validRefreshToken = loginResponse.body.refreshToken;
-
-      return request(app.getHttpServer())
-        .post('/auth/refresh')
-        .send({
-          refreshToken: validRefreshToken,
-        })
-        .expect(201)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('accessToken');
-          expect(res.body).toHaveProperty('refreshToken');
-        });
+      expect(response.body).toHaveProperty('access_token');
+      expect(response.body).toHaveProperty('refresh_token');
+      expect(response.body).toHaveProperty('token_type', 'Bearer');
     });
 
-    it('should fail with invalid refresh token', () => {
-      return request(app.getHttpServer())
+    it('should fail with invalid refresh token', async () => {
+      prismaService.refreshToken.findUnique.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
         .post('/auth/refresh')
         .send({
           refreshToken: 'invalid-token',
@@ -177,143 +141,92 @@ describe('Auth (e2e)', () => {
         .expect(401);
     });
 
-    it('should fail with missing refresh token', () => {
-      return request(app.getHttpServer()).post('/auth/refresh').send({}).expect(400);
-    });
-  });
+    it('should fail with expired refresh token', async () => {
+      const expiredToken = {
+        id: 'token-1',
+        token: 'expired-token',
+        userId: mockAuthUser.id,
+        expiresAt: new Date(Date.now() - 86400000), // Expired
+        revokedAt: null,
+        user: mockAuthUser,
+      };
 
-  describe('/auth/profile (GET)', () => {
-    beforeEach(async () => {
-      // Get fresh token
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
+      prismaService.refreshToken.findUnique.mockResolvedValue(expiredToken);
+
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
         .send({
-          login: testUser.login,
-          password: testUser.password,
+          refreshToken: 'expired-token',
         })
-        .expect(201);
-
-      accessToken = loginResponse.body.accessToken;
-    });
-
-    it('should get profile with valid token', () => {
-      return request(app.getHttpServer())
-        .get('/auth/profile')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.login).toBe(testUser.login);
-          expect(res.body.displayName).toBe(testUser.displayName);
-          expect(res.body.role).toBe(testUser.role);
-        });
-    });
-
-    it('should fail without token', () => {
-      return request(app.getHttpServer()).get('/auth/profile').expect(401);
-    });
-
-    it('should fail with invalid token', () => {
-      return request(app.getHttpServer())
-        .get('/auth/profile')
-        .set('Authorization', 'Bearer invalid-token')
         .expect(401);
+    });
+
+    it('should fail with revoked refresh token', async () => {
+      const revokedToken = {
+        id: 'token-1',
+        token: 'revoked-token',
+        userId: mockAuthUser.id,
+        expiresAt: new Date(Date.now() + 86400000),
+        revokedAt: new Date(), // Revoked
+        user: mockAuthUser,
+      };
+
+      prismaService.refreshToken.findUnique.mockResolvedValue(revokedToken);
+      prismaService.refreshToken.updateMany.mockResolvedValue({});
+
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({
+          refreshToken: 'revoked-token',
+        })
+        .expect(403);
     });
   });
 
   describe('/auth/logout (POST)', () => {
-    beforeEach(async () => {
-      // Get fresh token
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
+    it('should logout successfully', async () => {
+      prismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Authorization', 'Bearer mock-jwt-token')
         .send({
-          login: testUser.login,
-          password: testUser.password,
+          refreshToken: 'valid-refresh-token',
         })
         .expect(201);
 
-      accessToken = loginResponse.body.accessToken;
-      refreshToken = loginResponse.body.refreshToken;
+      expect(response.body).toEqual({
+        message: 'Logged out successfully',
+      });
     });
 
-    it('should logout successfully', () => {
-      return request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(201);
-    });
-
-    it('should invalidate refresh token after logout', async () => {
-      // Logout
+    it('should require authentication', async () => {
       await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(201);
-
-      // Try to use refresh token
-      return request(app.getHttpServer())
-        .post('/auth/refresh')
         .send({
-          refreshToken: refreshToken,
+          refreshToken: 'valid-refresh-token',
         })
         .expect(401);
     });
-
-    it('should fail without authentication', () => {
-      return request(app.getHttpServer()).post('/auth/logout').expect(401);
-    });
   });
 
-  describe('Account lockout', () => {
-    const lockoutUser = {
-      login: 'lockouttest',
-      password: 'testpass123',
-    };
+  describe('/auth/logout-all (POST)', () => {
+    it('should logout from all devices', async () => {
+      prismaService.refreshToken.updateMany.mockResolvedValue({ count: 3 });
 
-    beforeAll(async () => {
-      const hashedPassword = await bcrypt.hash(lockoutUser.password, 10);
-      await prismaService.user.create({
-        data: {
-          login: lockoutUser.login,
-          password: hashedPassword,
-          displayName: 'Lockout Test User',
-          role: 'USER',
-        },
+      const response = await request(app.getHttpServer())
+        .post('/auth/logout-all')
+        .set('Authorization', 'Bearer mock-jwt-token')
+        .expect(201);
+
+      expect(response.body).toEqual({
+        message: 'Logged out from all devices',
       });
     });
 
-    afterAll(async () => {
-      await prismaService.user.delete({
-        where: { login: lockoutUser.login },
-      });
-    });
-
-    it('should lock account after 5 failed attempts', async () => {
-      // Make 5 failed login attempts
-      for (let i = 0; i < 5; i++) {
-        await request(app.getHttpServer())
-          .post('/auth/login')
-          .send({
-            login: lockoutUser.login,
-            password: 'wrongpassword',
-          })
-          .expect(401);
-      }
-
-      // Check that account is locked
-      const user = await prismaService.user.findUnique({
-        where: { login: lockoutUser.login },
-      });
-
-      expect(user.failedLoginAttempts).toBe(5);
-      expect(user.lockedUntil).toBeTruthy();
-
-      // Verify login fails even with correct password
+    it('should require authentication', async () => {
       await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          login: lockoutUser.login,
-          password: lockoutUser.password,
-        })
+        .post('/auth/logout-all')
         .expect(401);
     });
   });

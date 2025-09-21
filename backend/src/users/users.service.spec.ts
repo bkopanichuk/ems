@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../database/prisma.service';
-import { AuditService, AuditAction } from '../audit/audit.service';
 import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
@@ -11,7 +10,6 @@ jest.mock('bcrypt');
 describe('UsersService', () => {
   let service: UsersService;
   let prismaService: PrismaService;
-  let auditService: AuditService;
 
   const mockUser = {
     id: '1',
@@ -54,41 +52,54 @@ describe('UsersService', () => {
             },
           },
         },
-        {
-          provide: AuditService,
-          useValue: {
-            log: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
     prismaService = module.get<PrismaService>(PrismaService);
-    auditService = module.get<AuditService>(AuditService);
     jest.clearAllMocks();
   });
 
   describe('findAll', () => {
-    it('should return all active users', async () => {
-      const mockUsers = [mockUser, mockAdmin];
+    it('should return all active users with pagination metadata', async () => {
+      const mockUsers = [
+        {
+          id: mockUser.id,
+          login: mockUser.login,
+          displayName: mockUser.displayName,
+          role: mockUser.role,
+          isBlocked: mockUser.isBlocked,
+          createdAt: mockUser.createdAt,
+          updatedAt: mockUser.updatedAt,
+        },
+        {
+          id: mockAdmin.id,
+          login: mockAdmin.login,
+          displayName: mockAdmin.displayName,
+          role: mockAdmin.role,
+          isBlocked: mockAdmin.isBlocked,
+          createdAt: mockAdmin.createdAt,
+          updatedAt: mockAdmin.updatedAt,
+        },
+      ];
       (prismaService.user.findMany as jest.Mock).mockResolvedValue(mockUsers);
+      (prismaService.user.count as jest.Mock).mockResolvedValue(2);
 
-      const result = await service.findAll();
+      const result = await service.findAll({ skip: 0, take: 10 });
 
-      expect(result).toEqual(
-        mockUsers.map((user) => ({
-          id: user.id,
-          login: user.login,
-          displayName: user.displayName,
-          role: user.role,
-          isBlocked: user.isBlocked,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        })),
-      );
+      expect(result).toEqual({
+        data: mockUsers,
+        meta: {
+          total: 2,
+          page: 1,
+          lastPage: 1,
+        },
+      });
       expect(prismaService.user.findMany).toHaveBeenCalledWith({
+        skip: 0,
+        take: 10,
         where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           login: true,
@@ -103,20 +114,24 @@ describe('UsersService', () => {
 
     it('should return empty array when no users exist', async () => {
       (prismaService.user.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.user.count as jest.Mock).mockResolvedValue(0);
 
       const result = await service.findAll();
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({
+        data: [],
+        meta: {
+          total: 0,
+          page: 1,
+          lastPage: 0,
+        },
+      });
     });
   });
 
   describe('findOne', () => {
     it('should return user by id', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-
-      const result = await service.findOne('1');
-
-      expect(result).toEqual({
+      const mockUserWithoutPassword = {
         id: mockUser.id,
         login: mockUser.login,
         displayName: mockUser.displayName,
@@ -124,18 +139,34 @@ describe('UsersService', () => {
         isBlocked: mockUser.isBlocked,
         createdAt: mockUser.createdAt,
         updatedAt: mockUser.updatedAt,
+      };
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUserWithoutPassword);
+
+      const result = await service.findOne('1');
+
+      expect(result).toEqual(mockUserWithoutPassword);
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { id: '1', deletedAt: null },
+        select: {
+          id: true,
+          login: true,
+          displayName: true,
+          role: true,
+          isBlocked: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findOne('999')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when user is soft deleted', async () => {
-      const deletedUser = { ...mockUser, deletedAt: new Date() };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(deletedUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findOne('1')).rejects.toThrow(NotFoundException);
     });
@@ -150,15 +181,20 @@ describe('UsersService', () => {
         role: Role.USER,
       };
       const hashedPassword = 'hashedPassword123';
+      const createdUser = {
+        id: '3',
+        login: 'newuser',
+        displayName: 'New User',
+        role: Role.USER,
+        isBlocked: false,
+        createdAt: new Date(),
+      };
+
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
-      (prismaService.user.create as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        ...createDto,
-        password: hashedPassword,
-      });
+      (prismaService.user.create as jest.Mock).mockResolvedValue(createdUser);
 
-      const result = await service.create(createDto, '2');
+      const result = await service.create(createDto);
 
       expect(bcrypt.hash).toHaveBeenCalledWith('password123', 10);
       expect(prismaService.user.create).toHaveBeenCalledWith({
@@ -170,11 +206,7 @@ describe('UsersService', () => {
         },
         select: expect.any(Object),
       });
-      expect(auditService.log).toHaveBeenCalledWith({
-        userId: '2',
-        action: AuditAction.USER_CREATED,
-        metadata: { createdUserId: mockUser.id, login: 'newuser' },
-      });
+      expect(result).toEqual(createdUser);
     });
 
     it('should throw ConflictException when login already exists', async () => {
@@ -186,76 +218,81 @@ describe('UsersService', () => {
       };
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
 
-      await expect(service.create(createDto, '2')).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
     });
 
-    it('should allow creating user with previously deleted login', async () => {
+    it('should throw ConflictException when login was previously used', async () => {
       const createDto = {
         login: 'deleteduser',
         password: 'password123',
-        displayName: 'Recreated User',
+        displayName: 'Deleted User',
         role: Role.USER,
       };
       const deletedUser = { ...mockUser, deletedAt: new Date() };
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(deletedUser);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
-      (prismaService.user.create as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        ...createDto,
-      });
 
-      const result = await service.create(createDto, '2');
-
-      expect(result).toBeDefined();
-      expect(prismaService.user.create).toHaveBeenCalled();
+      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
     });
   });
 
   describe('update', () => {
     it('should update user displayName', async () => {
       const updateDto = { displayName: 'Updated Name' };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.user.update as jest.Mock).mockResolvedValue({
-        ...mockUser,
+      const updatedUser = {
+        id: mockUser.id,
+        login: mockUser.login,
         displayName: 'Updated Name',
-      });
+        role: mockUser.role,
+        isBlocked: mockUser.isBlocked,
+        createdAt: mockUser.createdAt,
+        updatedAt: mockUser.updatedAt,
+      };
 
-      const result = await service.update('1', updateDto, '2');
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(updatedUser);
 
-      expect(result.displayName).toBe('Updated Name');
-      expect(auditService.log).toHaveBeenCalledWith({
-        userId: '2',
-        action: AuditAction.USER_UPDATED,
-        metadata: { updatedUserId: '1', changes: updateDto },
+      const result = await service.update('1', updateDto);
+
+      expect(result).toEqual(updatedUser);
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: updateDto,
+        select: expect.any(Object),
       });
     });
 
     it('should update user role', async () => {
       const updateDto = { role: Role.ADMIN };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.user.update as jest.Mock).mockResolvedValue({
-        ...mockUser,
+      const updatedUser = {
+        id: mockUser.id,
+        login: mockUser.login,
+        displayName: mockUser.displayName,
         role: Role.ADMIN,
-      });
+        isBlocked: mockUser.isBlocked,
+        createdAt: mockUser.createdAt,
+        updatedAt: mockUser.updatedAt,
+      };
 
-      const result = await service.update('1', updateDto, '2');
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(updatedUser);
+
+      const result = await service.update('1', updateDto);
 
       expect(result.role).toBe(Role.ADMIN);
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.update('999', { displayName: 'New Name' }, '2')).rejects.toThrow(
+      await expect(service.update('999', { displayName: 'New Name' })).rejects.toThrow(
         NotFoundException,
       );
     });
 
     it('should not update deleted user', async () => {
-      const deletedUser = { ...mockUser, deletedAt: new Date() };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(deletedUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.update('1', { displayName: 'New Name' }, '2')).rejects.toThrow(
+      await expect(service.update('1', { displayName: 'New Name' })).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -263,178 +300,136 @@ describe('UsersService', () => {
 
   describe('remove', () => {
     it('should soft delete user', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
       (prismaService.user.update as jest.Mock).mockResolvedValue({
         ...mockUser,
         deletedAt: new Date(),
       });
 
-      await service.remove('1', '2');
+      const result = await service.remove('1');
 
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: {
           deletedAt: expect.any(Date),
-          refreshToken: null,
-          refreshTokenExpiresAt: null,
+          refreshTokens: {
+            updateMany: {
+              where: { userId: '1' },
+              data: { revokedAt: expect.any(Date) },
+            },
+          },
         },
       });
-      expect(auditService.log).toHaveBeenCalledWith({
-        userId: '2',
-        action: AuditAction.USER_DELETED,
-        metadata: { deletedUserId: '1' },
-      });
+      expect(result).toEqual({ message: 'User deleted successfully' });
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.remove('999', '2')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException when trying to delete self', async () => {
-      await expect(service.remove('1', '1')).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException when trying to delete last admin', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockAdmin);
-      (prismaService.user.count as jest.Mock).mockResolvedValue(1);
-
-      await expect(service.remove('2', '3')).rejects.toThrow(BadRequestException);
+      await expect(service.remove('999')).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('block', () => {
+  describe('blockUser', () => {
     it('should block user', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.user.update as jest.Mock).mockResolvedValue({
-        ...mockUser,
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      const blockedUser = {
+        id: mockUser.id,
+        login: mockUser.login,
+        displayName: mockUser.displayName,
+        role: mockUser.role,
         isBlocked: true,
-      });
+      };
+      (prismaService.user.update as jest.Mock).mockResolvedValue(blockedUser);
 
-      await service.block('1', '2');
+      const result = await service.blockUser('1');
 
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
-        data: {
+        data: { isBlocked: true },
+        select: {
+          id: true,
+          login: true,
+          displayName: true,
+          role: true,
           isBlocked: true,
-          refreshToken: null,
-          refreshTokenExpiresAt: null,
         },
       });
-      expect(auditService.log).toHaveBeenCalledWith({
-        userId: '2',
-        action: AuditAction.USER_BLOCKED,
-        metadata: { blockedUserId: '1' },
-      });
+      expect(result).toEqual(blockedUser);
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.block('999', '2')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException when trying to block self', async () => {
-      await expect(service.block('1', '1')).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException when trying to block last admin', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockAdmin);
-      (prismaService.user.count as jest.Mock).mockResolvedValue(1);
-
-      await expect(service.block('2', '3')).rejects.toThrow(BadRequestException);
+      await expect(service.blockUser('999')).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('unblock', () => {
+  describe('unblockUser', () => {
     it('should unblock user', async () => {
       const blockedUser = { ...mockUser, isBlocked: true };
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(blockedUser);
-      (prismaService.user.update as jest.Mock).mockResolvedValue({
-        ...blockedUser,
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(blockedUser);
+      const unblockedUser = {
+        id: mockUser.id,
+        login: mockUser.login,
+        displayName: mockUser.displayName,
+        role: mockUser.role,
         isBlocked: false,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-      });
+      };
+      (prismaService.user.update as jest.Mock).mockResolvedValue(unblockedUser);
 
-      await service.unblock('1', '2');
+      const result = await service.unblockUser('1');
 
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
-        data: {
-          isBlocked: false,
-          failedLoginAttempts: 0,
-          lockedUntil: null,
+        data: { isBlocked: false },
+        select: {
+          id: true,
+          login: true,
+          displayName: true,
+          role: true,
+          isBlocked: true,
         },
       });
-      expect(auditService.log).toHaveBeenCalledWith({
-        userId: '2',
-        action: AuditAction.USER_UNBLOCKED,
-        metadata: { unblockedUserId: '1' },
-      });
+      expect(result).toEqual(unblockedUser);
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.unblock('999', '2')).rejects.toThrow(NotFoundException);
+      await expect(service.unblockUser('999')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('assignRole', () => {
     it('should assign role to user', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.user.update as jest.Mock).mockResolvedValue({
-        ...mockUser,
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      const updatedUser = {
+        id: mockUser.id,
+        login: mockUser.login,
+        displayName: mockUser.displayName,
         role: Role.ADMIN,
-      });
+        isBlocked: mockUser.isBlocked,
+        createdAt: mockUser.createdAt,
+        updatedAt: mockUser.updatedAt,
+      };
+      (prismaService.user.update as jest.Mock).mockResolvedValue(updatedUser);
 
-      await service.assignRole('1', Role.ADMIN, '2');
+      const result = await service.assignRole('1', Role.ADMIN);
 
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: { role: Role.ADMIN },
+        select: expect.any(Object),
       });
-      expect(auditService.log).toHaveBeenCalledWith({
-        userId: '2',
-        action: AuditAction.ROLE_ASSIGNED,
-        metadata: { targetUserId: '1', oldRole: Role.USER, newRole: Role.ADMIN },
-      });
+      expect(result).toEqual(updatedUser);
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.assignRole('999', Role.ADMIN, '2')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException when demoting last admin', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockAdmin);
-      (prismaService.user.count as jest.Mock).mockResolvedValue(1);
-
-      await expect(service.assignRole('2', Role.USER, '3')).rejects.toThrow(BadRequestException);
+      await expect(service.assignRole('999', Role.ADMIN)).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('findByLogin', () => {
-    it('should find user by login', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-
-      const result = await service.findByLogin('testuser');
-
-      expect(result).toEqual(mockUser);
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { login: 'testuser' },
-      });
-    });
-
-    it('should return null when user not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
-
-      const result = await service.findByLogin('nonexistent');
-
-      expect(result).toBeNull();
-    });
-  });
 });

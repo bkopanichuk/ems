@@ -28,10 +28,6 @@ describe('UsersController', () => {
     updatedAt: new Date(),
   };
 
-  const mockRequest = {
-    user: { id: '2', role: Role.ADMIN },
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
@@ -40,13 +36,16 @@ describe('UsersController', () => {
           provide: UsersService,
           useValue: {
             findAll: jest.fn(),
+            findDeleted: jest.fn(),
             findOne: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
             remove: jest.fn(),
-            block: jest.fn(),
-            unblock: jest.fn(),
+            blockUser: jest.fn(),
+            unblockUser: jest.fn(),
             assignRole: jest.fn(),
+            restore: jest.fn(),
+            permanentlyDelete: jest.fn(),
           },
         },
       ],
@@ -58,22 +57,34 @@ describe('UsersController', () => {
   });
 
   describe('findAll', () => {
-    it('should return array of users', async () => {
+    it('should return array of users with pagination', async () => {
       const users = [mockUser, mockAdmin];
       (service.findAll as jest.Mock).mockResolvedValue(users);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(1, 10);
 
       expect(result).toEqual(users);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({ skip: 0, take: 10 });
     });
 
-    it('should return empty array when no users exist', async () => {
+    it('should calculate skip correctly for page 2', async () => {
       (service.findAll as jest.Mock).mockResolvedValue([]);
 
-      const result = await controller.findAll();
+      await controller.findAll(2, 10);
 
-      expect(result).toEqual([]);
+      expect(service.findAll).toHaveBeenCalledWith({ skip: 10, take: 10 });
+    });
+  });
+
+  describe('findDeleted', () => {
+    it('should return array of deleted users with pagination', async () => {
+      const deletedUsers = [{ ...mockUser, deletedAt: new Date() }];
+      (service.findDeleted as jest.Mock).mockResolvedValue(deletedUsers);
+
+      const result = await controller.findDeleted(1, 10);
+
+      expect(result).toEqual(deletedUsers);
+      expect(service.findDeleted).toHaveBeenCalledWith({ skip: 0, take: 10 });
     });
   });
 
@@ -105,10 +116,10 @@ describe('UsersController', () => {
       const createdUser = { ...mockUser, ...createDto };
       (service.create as jest.Mock).mockResolvedValue(createdUser);
 
-      const result = await controller.create(createDto, mockRequest);
+      const result = await controller.create(createDto);
 
       expect(result).toEqual(createdUser);
-      expect(service.create).toHaveBeenCalledWith(createDto, '2');
+      expect(service.create).toHaveBeenCalledWith(createDto);
     });
 
     it('should create admin user', async () => {
@@ -121,10 +132,10 @@ describe('UsersController', () => {
       const createdAdmin = { ...mockAdmin, ...createDto };
       (service.create as jest.Mock).mockResolvedValue(createdAdmin);
 
-      const result = await controller.create(createDto, mockRequest);
+      const result = await controller.create(createDto);
 
       expect(result).toEqual(createdAdmin);
-      expect(service.create).toHaveBeenCalledWith(createDto, '2');
+      expect(service.create).toHaveBeenCalledWith(createDto);
     });
   });
 
@@ -134,10 +145,10 @@ describe('UsersController', () => {
       const updatedUser = { ...mockUser, displayName: 'Updated Name' };
       (service.update as jest.Mock).mockResolvedValue(updatedUser);
 
-      const result = await controller.update('1', updateDto, mockRequest);
+      const result = await controller.update('1', updateDto);
 
       expect(result).toEqual(updatedUser);
-      expect(service.update).toHaveBeenCalledWith('1', updateDto, '2');
+      expect(service.update).toHaveBeenCalledWith('1', updateDto);
     });
 
     it('should update user role', async () => {
@@ -145,73 +156,88 @@ describe('UsersController', () => {
       const updatedUser = { ...mockUser, role: Role.ADMIN };
       (service.update as jest.Mock).mockResolvedValue(updatedUser);
 
-      const result = await controller.update('1', updateDto, mockRequest);
+      const result = await controller.update('1', updateDto);
 
       expect(result).toEqual(updatedUser);
-      expect(service.update).toHaveBeenCalledWith('1', updateDto, '2');
+      expect(service.update).toHaveBeenCalledWith('1', updateDto);
     });
   });
 
   describe('remove', () => {
     it('should delete user', async () => {
-      await controller.remove('1', mockRequest);
+      await controller.remove('1');
 
-      expect(service.remove).toHaveBeenCalledWith('1', '2');
+      expect(service.remove).toHaveBeenCalledWith('1');
     });
 
     it('should handle deletion errors', async () => {
       (service.remove as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
 
-      await expect(controller.remove('999', mockRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.remove('999')).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('block', () => {
+  describe('blockUser', () => {
     it('should block user', async () => {
-      await controller.block('1', mockRequest);
+      await controller.blockUser('1');
 
-      expect(service.block).toHaveBeenCalledWith('1', '2');
+      expect(service.blockUser).toHaveBeenCalledWith('1');
     });
 
     it('should handle blocking errors', async () => {
-      (service.block as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
+      (service.blockUser as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
 
-      await expect(controller.block('999', mockRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.blockUser('999')).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('unblock', () => {
+  describe('unblockUser', () => {
     it('should unblock user', async () => {
-      await controller.unblock('1', mockRequest);
+      await controller.unblockUser('1');
 
-      expect(service.unblock).toHaveBeenCalledWith('1', '2');
+      expect(service.unblockUser).toHaveBeenCalledWith('1');
     });
 
     it('should handle unblocking errors', async () => {
-      (service.unblock as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
+      (service.unblockUser as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
 
-      await expect(controller.unblock('999', mockRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.unblockUser('999')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('assignRole', () => {
     it('should assign role to user', async () => {
-      const assignRoleDto = { role: Role.ADMIN };
+      await controller.assignRole('1', Role.ADMIN);
 
-      await controller.assignRole('1', assignRoleDto, mockRequest);
-
-      expect(service.assignRole).toHaveBeenCalledWith('1', Role.ADMIN, '2');
+      expect(service.assignRole).toHaveBeenCalledWith('1', Role.ADMIN);
     });
 
     it('should handle role assignment errors', async () => {
-      const assignRoleDto = { role: Role.USER };
       (service.assignRole as jest.Mock).mockRejectedValue(
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.assignRole('999', assignRoleDto, mockRequest)).rejects.toThrow(
+      await expect(controller.assignRole('999', Role.USER)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('restore', () => {
+    it('should restore deleted user', async () => {
+      await controller.restore('1');
+
+      expect(service.restore).toHaveBeenCalledWith('1');
+    });
+
+    it('should handle restore errors', async () => {
+      (service.restore as jest.Mock).mockRejectedValue(
+        new NotFoundException('User not found'),
+      );
+
+      await expect(controller.restore('999')).rejects.toThrow(NotFoundException);
     });
   });
 });

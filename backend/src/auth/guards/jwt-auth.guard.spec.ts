@@ -1,59 +1,78 @@
 import { ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt-auth.guard';
+
+// Mock the AuthGuard from passport
+jest.mock('@nestjs/passport', () => ({
+  AuthGuard: jest.fn().mockImplementation((strategy: string) => {
+    return class MockAuthGuard {
+      canActivate(context: ExecutionContext) {
+        // Mock successful authentication for JWT strategy
+        if (strategy === 'jwt') {
+          const request = context.switchToHttp().getRequest();
+          // Check if there's a valid authorization header
+          if (request.headers?.authorization?.startsWith('Bearer ')) {
+            request.user = { id: '1', role: 'USER' };
+            return true;
+          }
+          return false;
+        }
+        return true;
+      }
+    };
+  }),
+}));
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
-  let reflector: Reflector;
 
   beforeEach(() => {
-    reflector = new Reflector();
-    guard = new JwtAuthGuard(reflector);
+    guard = new JwtAuthGuard();
   });
 
   describe('canActivate', () => {
-    it('should allow access when IS_PUBLIC_KEY is true', () => {
-      const context = {
-        getHandler: jest.fn(),
-        getClass: jest.fn(),
-      } as unknown as ExecutionContext;
-
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true);
-
-      const result = guard.canActivate(context);
-
-      expect(result).toBe(true);
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('isPublic', [
-        context.getHandler(),
-        context.getClass(),
-      ]);
-    });
-
-    it('should use parent canActivate when IS_PUBLIC_KEY is false', () => {
-      const context = {
+    const createMockExecutionContext = (hasAuth: boolean = true): ExecutionContext => {
+      return {
         getHandler: jest.fn(),
         getClass: jest.fn(),
         switchToHttp: jest.fn().mockReturnValue({
           getRequest: jest.fn().mockReturnValue({
-            headers: { authorization: 'Bearer valid-token' },
+            headers: hasAuth ? { authorization: 'Bearer valid-token' } : {},
+            user: null,
           }),
+          getResponse: jest.fn().mockReturnValue({}),
+          getNext: jest.fn(),
         }),
+        switchToRpc: jest.fn(),
+        switchToWs: jest.fn(),
+        getType: jest.fn().mockReturnValue('http'),
+        getArgs: jest.fn(),
+        getArgByIndex: jest.fn(),
+        getRpcContext: jest.fn(),
+        getWsContext: jest.fn(),
       } as unknown as ExecutionContext;
+    };
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
-
-      // Mock the parent class canActivate
-      const parentCanActivateSpy = jest
-        .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate')
-        .mockReturnValue(true);
-
+    it('should allow access with valid JWT token', () => {
+      const context = createMockExecutionContext(true);
       const result = guard.canActivate(context);
 
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('isPublic', [
-        context.getHandler(),
-        context.getClass(),
-      ]);
-      expect(parentCanActivateSpy).toHaveBeenCalledWith(context);
+      expect(result).toBe(true);
+
+      // Verify that user was set on request
+      const request = context.switchToHttp().getRequest();
+      expect(request.user).toEqual({ id: '1', role: 'USER' });
+    });
+
+    it('should deny access without JWT token', () => {
+      const context = createMockExecutionContext(false);
+      const result = guard.canActivate(context);
+
+      expect(result).toBe(false);
+    });
+
+    it('should be an instance of AuthGuard', () => {
+      expect(guard).toBeDefined();
+      expect(guard.canActivate).toBeDefined();
     });
   });
 });

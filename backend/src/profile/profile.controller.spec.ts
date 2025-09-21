@@ -17,10 +17,6 @@ describe('ProfileController', () => {
     updatedAt: new Date(),
   };
 
-  const mockRequest = {
-    user: { id: '1', role: Role.USER },
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProfileController],
@@ -45,7 +41,7 @@ describe('ProfileController', () => {
     it('should return user profile', async () => {
       (service.getProfile as jest.Mock).mockResolvedValue(mockUser);
 
-      const result = await controller.getProfile(mockRequest);
+      const result = await controller.getProfile('1');
 
       expect(result).toEqual(mockUser);
       expect(service.getProfile).toHaveBeenCalledWith('1');
@@ -54,7 +50,7 @@ describe('ProfileController', () => {
     it('should throw NotFoundException when user not found', async () => {
       (service.getProfile as jest.Mock).mockRejectedValue(new NotFoundException('User not found'));
 
-      await expect(controller.getProfile(mockRequest)).rejects.toThrow(NotFoundException);
+      await expect(controller.getProfile('999')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -64,7 +60,7 @@ describe('ProfileController', () => {
       const updatedUser = { ...mockUser, displayName: 'Updated Name' };
       (service.updateProfile as jest.Mock).mockResolvedValue(updatedUser);
 
-      const result = await controller.updateProfile(mockRequest, updateDto);
+      const result = await controller.updateProfile('1', updateDto);
 
       expect(result).toEqual(updatedUser);
       expect(service.updateProfile).toHaveBeenCalledWith('1', updateDto);
@@ -74,7 +70,7 @@ describe('ProfileController', () => {
       const updateDto = {};
       (service.updateProfile as jest.Mock).mockResolvedValue(mockUser);
 
-      const result = await controller.updateProfile(mockRequest, updateDto);
+      const result = await controller.updateProfile('1', updateDto);
 
       expect(result).toEqual(mockUser);
       expect(service.updateProfile).toHaveBeenCalledWith('1', updateDto);
@@ -86,7 +82,7 @@ describe('ProfileController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.updateProfile(mockRequest, updateDto)).rejects.toThrow(
+      await expect(controller.updateProfile('999', updateDto)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -99,9 +95,9 @@ describe('ProfileController', () => {
         newPassword: 'newPass123',
       };
 
-      await controller.changePassword(mockRequest, changePasswordDto);
+      await controller.changePassword('1', Role.USER, changePasswordDto);
 
-      expect(service.changePassword).toHaveBeenCalledWith('1', changePasswordDto);
+      expect(service.changePassword).toHaveBeenCalledWith('1', changePasswordDto, Role.USER);
     });
 
     it('should throw BadRequestException when old password is incorrect', async () => {
@@ -113,15 +109,12 @@ describe('ProfileController', () => {
         new BadRequestException('Incorrect old password'),
       );
 
-      await expect(controller.changePassword(mockRequest, changePasswordDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.changePassword('1', Role.USER, changePasswordDto),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when admin tries to change password', async () => {
-      const adminRequest = {
-        user: { id: '2', role: Role.ADMIN },
-      };
       const changePasswordDto = {
         oldPassword: 'oldPass123',
         newPassword: 'newPass123',
@@ -130,9 +123,9 @@ describe('ProfileController', () => {
         new BadRequestException('Admins cannot change password'),
       );
 
-      await expect(controller.changePassword(adminRequest, changePasswordDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.changePassword('2', Role.ADMIN, changePasswordDto),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException when user not found', async () => {
@@ -144,9 +137,9 @@ describe('ProfileController', () => {
         new NotFoundException('User not found'),
       );
 
-      await expect(controller.changePassword(mockRequest, changePasswordDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.changePassword('999', Role.USER, changePasswordDto),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

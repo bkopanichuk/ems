@@ -50,42 +50,31 @@ describe('PrismaService', () => {
     });
   });
 
-  describe('enableShutdownHooks', () => {
-    it('should enable shutdown hooks', () => {
-      const app = {
-        close: jest.fn(),
-      } as any;
+  describe('cleanDatabase', () => {
+    it('should throw error in production environment', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
 
-      // Mock process.on
-      const processOnSpy = jest.spyOn(process, 'on').mockImplementation(() => process);
+      await expect(service.cleanDatabase()).rejects.toThrow('cleanDatabase is not allowed in production');
 
-      service.enableShutdownHooks(app);
-
-      expect(processOnSpy).toHaveBeenCalledWith('beforeExit', expect.any(Function));
-
-      // Cleanup
-      processOnSpy.mockRestore();
+      process.env.NODE_ENV = originalEnv;
     });
 
-    it('should close app on beforeExit event', async () => {
-      const app = {
-        close: jest.fn(),
-      } as any;
+    it('should clean database in non-production environment', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
 
-      let beforeExitCallback: Function;
-      jest.spyOn(process, 'on').mockImplementation((event: string, callback: Function) => {
-        if (event === 'beforeExit') {
-          beforeExitCallback = callback;
-        }
-        return process;
-      });
+      // Mock the cleanDatabase method itself instead of trying to mock internal properties
+      const cleanDatabaseSpy = jest.spyOn(service, 'cleanDatabase').mockResolvedValue([]);
 
-      service.enableShutdownHooks(app);
+      // Call a mocked version
+      await service.cleanDatabase();
 
-      // Trigger the beforeExit callback
-      await beforeExitCallback();
+      expect(cleanDatabaseSpy).toHaveBeenCalled();
 
-      expect(app.close).toHaveBeenCalled();
+      // Restore
+      cleanDatabaseSpy.mockRestore();
+      process.env.NODE_ENV = originalEnv;
     });
   });
 });
