@@ -53,8 +53,11 @@ let ProfileService = class ProfileService {
         this.prisma = prisma;
     }
     async getProfile(userId) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id: userId,
+                deletedAt: null,
+            },
             select: {
                 id: true,
                 login: true,
@@ -70,8 +73,11 @@ let ProfileService = class ProfileService {
         return user;
     }
     async updateProfile(userId, updateProfileDto) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id: userId,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.UnauthorizedException('User not found');
@@ -94,8 +100,11 @@ let ProfileService = class ProfileService {
         if (userRole === client_1.Role.ADMIN) {
             throw new common_1.ForbiddenException('Admins cannot change their password');
         }
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id: userId,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.UnauthorizedException('User not found');

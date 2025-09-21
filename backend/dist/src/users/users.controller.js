@@ -36,6 +36,10 @@ let UsersController = class UsersController {
             take: limit,
         });
     }
+    findDeleted(page, limit) {
+        const skip = (page - 1) * limit;
+        return this.usersService.findDeleted({ skip, take: limit });
+    }
     findOne(id) {
         return this.usersService.findOne(id);
     }
@@ -53,6 +57,12 @@ let UsersController = class UsersController {
     }
     assignRole(id, role) {
         return this.usersService.assignRole(id, role);
+    }
+    restore(id) {
+        return this.usersService.restore(id);
+    }
+    permanentlyDelete(id) {
+        return this.usersService.permanentlyDelete(id);
     }
 };
 exports.UsersController = UsersController;
@@ -73,6 +83,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('deleted'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN),
+    __param(0, (0, common_1.Query)('page', new common_1.DefaultValuePipe(1), common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Query)('limit', new common_1.DefaultValuePipe(10), common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "findDeleted", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN),
@@ -123,6 +142,22 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "assignRole", null);
+__decorate([
+    (0, common_1.Post)(':id/restore'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "restore", null);
+__decorate([
+    (0, common_1.Delete)(':id/permanent'),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "permanentlyDelete", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

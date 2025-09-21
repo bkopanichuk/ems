@@ -12,11 +12,17 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     const { password, ...userData } = createUserDto;
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { login: userData.login },
+    // Check for existing user (including soft-deleted)
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        login: userData.login,
+      },
     });
 
     if (existingUser) {
+      if (existingUser.deletedAt) {
+        throw new ConflictException('This login was previously used. Please choose a different login.');
+      }
       throw new ConflictException('User with this login already exists');
     }
 
@@ -57,11 +63,17 @@ export class UsersService {
   }) {
     const { skip = 0, take = 10, where, orderBy } = params || {};
 
+    // Exclude soft-deleted users
+    const whereWithDeleted = {
+      ...where,
+      deletedAt: null,
+    };
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
         take,
-        where,
+        where: whereWithDeleted,
         orderBy: orderBy || { createdAt: 'desc' },
         select: {
           id: true,
@@ -73,7 +85,7 @@ export class UsersService {
           updatedAt: true,
         },
       }),
-      this.prisma.user.count({ where }),
+      this.prisma.user.count({ where: whereWithDeleted }),
     ]);
 
     return {
@@ -87,8 +99,11 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
       select: {
         id: true,
         login: true,
@@ -108,8 +123,11 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -140,24 +158,41 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await this.prisma.user.delete({
+    // Soft delete: set deletedAt timestamp
+    await this.prisma.user.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        // Also revoke all refresh tokens
+        refreshTokens: {
+          updateMany: {
+            where: { userId: id },
+            data: { revokedAt: new Date() },
+          },
+        },
+      },
     });
 
     return { message: 'User deleted successfully' };
   }
 
   async blockUser(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -180,8 +215,11 @@ export class UsersService {
   }
 
   async unblockUser(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -204,8 +242,11 @@ export class UsersService {
   }
 
   async assignRole(id: string, role: 'USER' | 'ADMIN') {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -225,5 +266,110 @@ export class UsersService {
     });
 
     return updatedUser;
+  }
+
+  async restore(id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Deleted user not found');
+    }
+
+    const restoredUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: null,
+        isBlocked: false, // Unblock on restore
+        failedLoginAttempts: 0, // Reset login attempts
+        lockedUntil: null, // Unlock account
+      },
+      select: {
+        id: true,
+        login: true,
+        displayName: true,
+        role: true,
+        isBlocked: true,
+      },
+    });
+
+    return restoredUser;
+  }
+
+  async findDeleted(params?: {
+    skip?: number;
+    take?: number;
+  }) {
+    const { skip = 0, take = 10 } = params || {};
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take,
+        where: {
+          deletedAt: { not: null },
+        },
+        orderBy: { deletedAt: 'desc' },
+        select: {
+          id: true,
+          login: true,
+          displayName: true,
+          role: true,
+          deletedAt: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          deletedAt: { not: null },
+        },
+      }),
+    ]);
+
+    return {
+      data: users,
+      meta: {
+        total,
+        page: Math.floor(skip / take) + 1,
+        lastPage: Math.ceil(total / take),
+      },
+    };
+  }
+
+  async permanentlyDelete(id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Deleted user not found');
+    }
+
+    // Delete all related data first to avoid foreign key constraints
+    await this.prisma.$transaction(async (tx) => {
+      // Delete audit logs
+      await tx.auditLog.deleteMany({
+        where: { userId: id },
+      });
+
+      // Delete refresh tokens
+      await tx.refreshToken.deleteMany({
+        where: { userId: id },
+      });
+
+      // Finally delete the user
+      await tx.user.delete({
+        where: { id },
+      });
+    });
+
+    return { message: 'User permanently deleted' };
   }
 }

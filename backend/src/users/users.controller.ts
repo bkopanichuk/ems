@@ -43,6 +43,16 @@ export class UsersController {
     });
   }
 
+  @Get('deleted')
+  @Roles(Role.ADMIN)
+  findDeleted(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+    return this.usersService.findDeleted({ skip, take: limit });
+  }
+
   @Get(':id')
   @Roles(Role.ADMIN)
   findOne(@Param('id') id: string) {
@@ -77,5 +87,17 @@ export class UsersController {
   @Roles(Role.ADMIN)
   assignRole(@Param('id') id: string, @Body('role') role: 'USER' | 'ADMIN') {
     return this.usersService.assignRole(id, role);
+  }
+
+  @Post(':id/restore')
+  @Roles(Role.ADMIN)
+  restore(@Param('id') id: string) {
+    return this.usersService.restore(id);
+  }
+
+  @Delete(':id/permanent')
+  @Roles(Role.ADMIN)
+  permanentlyDelete(@Param('id') id: string) {
+    return this.usersService.permanentlyDelete(id);
   }
 }

@@ -54,10 +54,15 @@ let UsersService = class UsersService {
     }
     async create(createUserDto) {
         const { password, ...userData } = createUserDto;
-        const existingUser = await this.prisma.user.findUnique({
-            where: { login: userData.login },
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+                login: userData.login,
+            },
         });
         if (existingUser) {
+            if (existingUser.deletedAt) {
+                throw new common_1.ConflictException('This login was previously used. Please choose a different login.');
+            }
             throw new common_1.ConflictException('User with this login already exists');
         }
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -89,11 +94,15 @@ let UsersService = class UsersService {
     }
     async findAll(params) {
         const { skip = 0, take = 10, where, orderBy } = params || {};
+        const whereWithDeleted = {
+            ...where,
+            deletedAt: null,
+        };
         const [users, total] = await Promise.all([
             this.prisma.user.findMany({
                 skip,
                 take,
-                where,
+                where: whereWithDeleted,
                 orderBy: orderBy || { createdAt: 'desc' },
                 select: {
                     id: true,
@@ -105,7 +114,7 @@ let UsersService = class UsersService {
                     updatedAt: true,
                 },
             }),
-            this.prisma.user.count({ where }),
+            this.prisma.user.count({ where: whereWithDeleted }),
         ]);
         return {
             data: users,
@@ -117,8 +126,11 @@ let UsersService = class UsersService {
         };
     }
     async findOne(id) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
             select: {
                 id: true,
                 login: true,
@@ -135,8 +147,11 @@ let UsersService = class UsersService {
         return user;
     }
     async update(id, updateUserDto) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
@@ -161,20 +176,35 @@ let UsersService = class UsersService {
         return updatedUser;
     }
     async remove(id) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
-        await this.prisma.user.delete({
+        await this.prisma.user.update({
             where: { id },
+            data: {
+                deletedAt: new Date(),
+                refreshTokens: {
+                    updateMany: {
+                        where: { userId: id },
+                        data: { revokedAt: new Date() },
+                    },
+                },
+            },
         });
         return { message: 'User deleted successfully' };
     }
     async blockUser(id) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
@@ -193,8 +223,11 @@ let UsersService = class UsersService {
         return updatedUser;
     }
     async unblockUser(id) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
@@ -213,8 +246,11 @@ let UsersService = class UsersService {
         return updatedUser;
     }
     async assignRole(id, role) {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: null,
+            },
         });
         if (!user) {
             throw new common_1.NotFoundException('User not found');
@@ -231,6 +267,91 @@ let UsersService = class UsersService {
             },
         });
         return updatedUser;
+    }
+    async restore(id) {
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: { not: null },
+            },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('Deleted user not found');
+        }
+        const restoredUser = await this.prisma.user.update({
+            where: { id },
+            data: {
+                deletedAt: null,
+                isBlocked: false,
+                failedLoginAttempts: 0,
+                lockedUntil: null,
+            },
+            select: {
+                id: true,
+                login: true,
+                displayName: true,
+                role: true,
+                isBlocked: true,
+            },
+        });
+        return restoredUser;
+    }
+    async findDeleted(params) {
+        const { skip = 0, take = 10 } = params || {};
+        const [users, total] = await Promise.all([
+            this.prisma.user.findMany({
+                skip,
+                take,
+                where: {
+                    deletedAt: { not: null },
+                },
+                orderBy: { deletedAt: 'desc' },
+                select: {
+                    id: true,
+                    login: true,
+                    displayName: true,
+                    role: true,
+                    deletedAt: true,
+                    createdAt: true,
+                },
+            }),
+            this.prisma.user.count({
+                where: {
+                    deletedAt: { not: null },
+                },
+            }),
+        ]);
+        return {
+            data: users,
+            meta: {
+                total,
+                page: Math.floor(skip / take) + 1,
+                lastPage: Math.ceil(total / take),
+            },
+        };
+    }
+    async permanentlyDelete(id) {
+        const user = await this.prisma.user.findFirst({
+            where: {
+                id,
+                deletedAt: { not: null },
+            },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('Deleted user not found');
+        }
+        await this.prisma.$transaction(async (tx) => {
+            await tx.auditLog.deleteMany({
+                where: { userId: id },
+            });
+            await tx.refreshToken.deleteMany({
+                where: { userId: id },
+            });
+            await tx.user.delete({
+                where: { id },
+            });
+        });
+        return { message: 'User permanently deleted' };
     }
 };
 exports.UsersService = UsersService;

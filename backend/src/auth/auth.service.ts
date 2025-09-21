@@ -36,12 +36,12 @@ export class AuthService {
       where: { login },
     });
 
-    if (!user) {
-      // Log failed attempt for non-existent user (don't reveal user doesn't exist)
+    if (!user || user.deletedAt) {
+      // Log failed attempt for non-existent or deleted user (don't reveal user doesn't exist)
       await this.auditService.log({
-        userId: 'unknown',
+        userId: user?.id || 'unknown',
         action: AuditAction.LOGIN_FAILED,
-        metadata: { login, reason: 'user_not_found' },
+        metadata: { login, reason: user?.deletedAt ? 'user_deleted' : 'user_not_found' },
         ipAddress: this.getIpAddress(request),
         userAgent: request?.headers['user-agent'],
       });
@@ -325,8 +325,11 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
       select: {
         id: true,
         login: true,

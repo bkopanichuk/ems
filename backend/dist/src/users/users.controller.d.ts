@@ -28,6 +28,21 @@ export declare class UsersController {
             lastPage: number;
         };
     }>;
+    findDeleted(page: number, limit: number): Promise<{
+        data: {
+            id: string;
+            login: string;
+            displayName: string | null;
+            role: import("@prisma/client").$Enums.Role;
+            deletedAt: Date | null;
+            createdAt: Date;
+        }[];
+        meta: {
+            total: number;
+            page: number;
+            lastPage: number;
+        };
+    }>;
     findOne(id: string): Promise<{
         id: string;
         login: string;
@@ -69,5 +84,15 @@ export declare class UsersController {
         displayName: string | null;
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
+    }>;
+    restore(id: string): Promise<{
+        id: string;
+        login: string;
+        displayName: string | null;
+        role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
+    }>;
+    permanentlyDelete(id: string): Promise<{
+        message: string;
     }>;
 }

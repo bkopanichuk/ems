@@ -10,8 +10,11 @@ export class ProfileService {
   constructor(private prisma: PrismaService) {}
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
       select: {
         id: true,
         login: true,
@@ -30,8 +33,11 @@ export class ProfileService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
@@ -60,8 +66,11 @@ export class ProfileService {
       throw new ForbiddenException('Admins cannot change their password');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
     });
 
     if (!user) {

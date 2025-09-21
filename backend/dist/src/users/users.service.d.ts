@@ -76,4 +76,32 @@ export declare class UsersService {
         role: import("@prisma/client").$Enums.Role;
         isBlocked: boolean;
     }>;
+    restore(id: string): Promise<{
+        id: string;
+        login: string;
+        displayName: string | null;
+        role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
+    }>;
+    findDeleted(params?: {
+        skip?: number;
+        take?: number;
+    }): Promise<{
+        data: {
+            id: string;
+            login: string;
+            displayName: string | null;
+            role: import("@prisma/client").$Enums.Role;
+            deletedAt: Date | null;
+            createdAt: Date;
+        }[];
+        meta: {
+            total: number;
+            page: number;
+            lastPage: number;
+        };
+    }>;
+    permanentlyDelete(id: string): Promise<{
+        message: string;
+    }>;
 }
