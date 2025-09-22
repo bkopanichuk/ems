@@ -36,7 +36,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: npm run start:dev
+    command: sh -c "npx prisma generate && npm run start:dev"
+    # Alternative with auto-reload on schema changes (requires fswatch in container):
+    # command: sh scripts/dev-with-prisma.sh
 
   frontend:
     build:

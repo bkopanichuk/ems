@@ -24,10 +24,15 @@ npm run test:e2e               # Run E2E tests
 npm run test:cov               # Generate coverage report
 
 # Database
-npm run prisma:generate        # Generate Prisma client
+npm run prisma:generate        # Generate Prisma client (auto-runs after npm install)
 npm run prisma:migrate         # Run migrations (dev)
 npm run prisma:migrate:deploy  # Deploy migrations (prod)
 npm run prisma:seed           # Seed database with admin user
+
+# NOTE: Prisma client auto-generates:
+# - After npm install (via postinstall hook)
+# - On docker-compose up (runs before start:dev)
+# - No manual generation needed!
 ```
 
 ### Frontend (from `/frontend` directory)
