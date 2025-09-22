@@ -1,0 +1,14 @@
+# Compiled output
+dist
+node_modules
+
+# Tests
+coverage
+
+# IDE
+.vscode
+.idea
+
+# Misc
+*.log
+.DS_Store

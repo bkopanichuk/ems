@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { DateSerializationInterceptor } from './common/interceptors/date-serialization.interceptor';
 import helmet from 'helmet';
 import compression from 'compression';
 import * as express from 'express';
@@ -54,6 +55,9 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global date serialization interceptor
+  app.useGlobalInterceptors(new DateSerializationInterceptor());
 
   // Global prefix
   app.setGlobalPrefix('api');

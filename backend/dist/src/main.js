@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
 const app_module_1 = require("./app.module");
+const date_serialization_interceptor_1 = require("./common/interceptors/date-serialization.interceptor");
 const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const express = __importStar(require("express"));
@@ -74,6 +75,7 @@ async function bootstrap() {
             });
         },
     }));
+    app.useGlobalInterceptors(new date_serialization_interceptor_1.DateSerializationInterceptor());
     app.setGlobalPrefix('api');
     app.enableShutdownHooks();
     const port = process.env.PORT || 3000;
