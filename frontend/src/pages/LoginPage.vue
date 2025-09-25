@@ -2,18 +2,17 @@
   <q-page class="col column items-center base-page login-page">
     <div class="col flex flex-center base-page-wrapper">
       <div class="column items-center base-card bordered-card login-card">
-        <div class="column items-center full-width base-margin-bottom">
+        <div class="column items-center full-width base-margin-bottom base-margin-bottom--large">
           <div class="text-xxl">EMS</div>
           <div class="text-lg text-medium">Energy Management System</div>
         </div>
 
-        <q-form class="column items-center full-width" @submit="onSubmit" @reset="onReset">
+        <q-form class="column items-center full-width" @submit="onSubmit" @reset="onReset" greedy>
           <q-input
             v-model="loginForm.username"
-            class="base-input full-width"
-            label="Username"
-            lazy-rules
-            :rules="[required('Username is required')]"
+            class="base-input full-width base-margin-bottom base-margin-bottom--mini"
+            placeholder="Username"
+            :rules="[required('')]"
             :disable="loading"
           >
             <template v-slot:prepend>
@@ -23,11 +22,10 @@
 
           <q-input
             v-model="loginForm.password"
-            class="base-input full-width base-margin-bottom"
-            label="Password"
+            class="base-input full-width base-margin-bottom base-margin-bottom--large"
+            placeholder="Password"
             type="password"
-            lazy-rules
-            :rules="[required('Password is required')]"
+            :rules="[required('')]"
             :disable="loading"
           >
             <template v-slot:prepend>
