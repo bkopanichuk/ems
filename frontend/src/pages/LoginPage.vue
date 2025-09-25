@@ -3,8 +3,8 @@
     <div class="col flex flex-center base-page-wrapper">
       <div class="column items-center base-card bordered-card login-card">
         <div class="column items-center full-width base-margin-bottom base-margin-bottom--large">
-          <div class="text-xxl">EMS</div>
-          <div class="text-lg text-medium">Energy Management System</div>
+          <div class="text-xxl text-center">EMS</div>
+          <div class="text-lg text-medium text-center">Energy Management System</div>
         </div>
 
         <q-form class="column items-center full-width" @submit="onSubmit" @reset="onReset" greedy>
