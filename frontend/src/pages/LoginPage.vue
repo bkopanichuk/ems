@@ -7,10 +7,10 @@
           <div class="text-md text-medium">Energy Management System</div>
         </div>
 
-        <q-form @submit="onSubmit" @reset="onReset">
+        <q-form class="column items-center full-width" @submit="onSubmit" @reset="onReset">
           <q-input
             v-model="loginForm.username"
-            class="base-input"
+            class="base-input full-width"
             label="Username"
             lazy-rules
             :rules="[(val) => !!val || 'Username is required']"
@@ -23,7 +23,7 @@
 
           <q-input
             v-model="loginForm.password"
-            class="base-input"
+            class="base-input full-width"
             label="Password"
             type="password"
             lazy-rules
