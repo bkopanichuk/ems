@@ -1,6 +1,6 @@
 <template>
-  <q-layout view="hHh lpR fFf" class="flex clean-layout">
-    <q-page-container class="flex full-width full-height">
+  <q-layout view="hHh lpR fFf" class="column clean-layout">
+    <q-page-container class="col column">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -8,9 +8,4 @@
 
 <script setup lang="ts"></script>
 
-<style scoped lang="scss">
-.clean-layout {
-  .q-page-container {
-  }
-}
-</style>
+<style scoped lang="scss"></style>
