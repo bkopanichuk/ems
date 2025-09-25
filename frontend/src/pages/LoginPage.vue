@@ -36,20 +36,7 @@
           <q-btn type="submit" class="base-button full-width" :loading="loading" :disable="loading">
             Sign In
           </q-btn>
-
-          <div v-if="errorMessage" class="text-negative text-caption">
-            {{ errorMessage }}
-          </div>
         </q-form>
-
-        <q-card-section v-if="isBlocked" class="bg-negative text-white">
-          <q-banner class="bg-transparent">
-            <template v-slot:avatar>
-              <q-icon name="error" color="white" />
-            </template>
-            Your account has been blocked. Please contact the administrator.
-          </q-banner>
-        </q-card-section>
       </div>
     </div>
   </q-page>
@@ -59,9 +46,10 @@
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth.store';
-import { Notify } from 'quasar';
+import { useQuasar } from 'quasar';
 import { required } from 'src/utils/validation';
 
+const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -72,37 +60,37 @@ const loginForm = ref({
 });
 
 const loading = ref(false);
-const errorMessage = ref('');
-const isBlocked = ref(false);
 
 const onSubmit = async () => {
   loading.value = true;
-  errorMessage.value = '';
-  isBlocked.value = false;
 
   try {
     const result = await authStore.login(loginForm.value.username, loginForm.value.password);
 
     if (result.success) {
-      Notify.create({
-        type: 'positive',
+      $q.notify({
         message: 'Login successful!',
-        position: 'top',
+        position: $q.screen.gt.xs ? 'top-right' : 'top',
+        classes: 'max-width-24rem notify-success',
       });
 
       // Navigate to redirect URL or home
       const redirectTo = (route.query.redirect as string) || '/';
       await router.push(redirectTo);
     } else {
-      errorMessage.value = result.error || 'Login failed';
-
-      // Check if user is blocked
-      if (result.error?.toLowerCase().includes('blocked')) {
-        isBlocked.value = true;
-      }
+      $q.notify({
+        message: result.error || 'Login failed',
+        position: $q.screen.gt.xs ? 'top-right' : 'top',
+        classes: 'max-width-24rem notify-error',
+      });
     }
   } catch (error) {
-    errorMessage.value = (error as Error).message || 'An unexpected error occurred';
+    $q.notify({
+      message: (error as Error).message || 'An unexpected error occurred',
+      position: $q.screen.gt.xs ? 'top-right' : 'top',
+      classes: 'max-width-24rem notify-error',
+    });
+
     console.error('Login error:', error);
   } finally {
     loading.value = false;
@@ -114,8 +102,6 @@ const onReset = () => {
     username: '',
     password: '',
   };
-  errorMessage.value = '';
-  isBlocked.value = false;
 };
 </script>
 
