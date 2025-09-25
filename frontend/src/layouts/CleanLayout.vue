@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh lpR fFf" class="flex clean-layout">
-    <q-page-container>
+    <q-page-container class="flex full-width full-height">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -10,16 +10,7 @@
 
 <style scoped lang="scss">
 .clean-layout {
-  height: 100dvh;
-  width: 100dvw;
-  max-height: 100dvh;
-  max-width: 100dvw;
-
   .q-page-container {
-    height: 100%;
-    width: 100%;
-    max-height: 100%;
-    max-width: 100%;
   }
 }
 </style>
