@@ -14,6 +14,7 @@ import { PrismaService } from '../src/database/prisma.service';
 import { AuthService } from '../src/auth/auth.service';
 import { ProfileService } from '../src/profile/profile.service';
 import { UsersService } from '../src/users/users.service';
+import { InvertersService } from '../src/inverters/inverters.service';
 import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
 import { LocalAuthGuard } from '../src/auth/guards/local-auth.guard';
 import { JwtService } from '@nestjs/jwt';
@@ -70,6 +71,16 @@ class MockLocalAuthGuard {
   }
 }
 
+export function createMockInvertersService() {
+  return {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+}
+
 export function createTestingApp(): Promise<INestApplication> {
   return Test.createTestingModule({
     imports: [AppModule],
@@ -82,6 +93,8 @@ export function createTestingApp(): Promise<INestApplication> {
     .useValue(createMockProfileService())
     .overrideProvider(UsersService)
     .useValue(createMockUsersService())
+    .overrideProvider(InvertersService)
+    .useValue(createMockInvertersService())
     .overrideGuard(JwtAuthGuard)
     .useClass(MockJwtAuthGuard)
     .overrideGuard(LocalAuthGuard)

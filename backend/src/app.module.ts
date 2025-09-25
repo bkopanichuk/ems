@@ -12,6 +12,7 @@ import { UsersModule } from './users/users.module';
 import { ProfileModule } from './profile/profile.module';
 import { HealthModule } from './health/health.module';
 import { AuditModule } from './audit/audit.module';
+import { InvertersModule } from './inverters/inverters.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuditModule } from './audit/audit.module';
     UsersModule,
     ProfileModule,
     HealthModule,
+    InvertersModule,
   ],
   controllers: [],
   providers: [

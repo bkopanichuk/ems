@@ -56,7 +56,9 @@ describe('DateSerializationInterceptor', () => {
     interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
       next: (result) => {
         expect(result.user.profile.createdAt).toBe('2025-01-01T12:00:00.000Z');
-        expect(result.user.profile.lastLoginAt).toBe('2025-01-01T12:00:00.000Z');
+        expect(result.user.profile.lastLoginAt).toBe(
+          '2025-01-01T12:00:00.000Z',
+        );
         done();
       },
     });
@@ -107,8 +109,12 @@ describe('DateSerializationInterceptor', () => {
 
     interceptor.intercept(mockExecutionContext, mockCallHandler).subscribe({
       next: (result) => {
-        expect(result.users[0].posts[0].publishedAt).toBe('2025-01-01T12:00:00.000Z');
-        expect(result.users[0].posts[0].comments[0].createdAt).toBe('2025-01-01T12:00:00.000Z');
+        expect(result.users[0].posts[0].publishedAt).toBe(
+          '2025-01-01T12:00:00.000Z',
+        );
+        expect(result.users[0].posts[0].comments[0].createdAt).toBe(
+          '2025-01-01T12:00:00.000Z',
+        );
         done();
       },
     });

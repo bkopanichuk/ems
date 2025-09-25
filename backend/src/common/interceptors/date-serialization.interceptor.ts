@@ -26,7 +26,7 @@ export class DateSerializationInterceptor implements NestInterceptor {
 
     // Handle Arrays
     if (Array.isArray(obj)) {
-      return obj.map(item => this.transformDates(item));
+      return obj.map((item) => this.transformDates(item));
     }
 
     // Handle Plain Objects (not class instances)
