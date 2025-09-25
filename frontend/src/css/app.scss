@@ -54,26 +54,26 @@ body {
     }
   }
 
-//   @media (max-width: $breakpoint-xs-max) {
-//     // Site under construction
-//     &::before {
-//       content: 'Site under construction';
-//       position: fixed;
-//       display: flex;
-//       align-items: center;
-//       justify-content: center;
-//       text-align: center;
-//       background-color: $primary;
-//       top: 0;
-//       left: 0;
-//       width: 100dvw;
-//       height: 100dvh;
-//       font-size: 2rem;
-//       font-weight: 700;
-//       color: $accent;
-//       z-index: 9999;
-//     }
-//   }
+  //   @media (max-width: $breakpoint-xs-max) {
+  //     // Site under construction
+  //     &::before {
+  //       content: 'Site under construction';
+  //       position: fixed;
+  //       display: flex;
+  //       align-items: center;
+  //       justify-content: center;
+  //       text-align: center;
+  //       background-color: $primary;
+  //       top: 0;
+  //       left: 0;
+  //       width: 100dvw;
+  //       height: 100dvh;
+  //       font-size: 2rem;
+  //       font-weight: 700;
+  //       color: $accent;
+  //       z-index: 9999;
+  //     }
+  //   }
 }
 
 //Page
@@ -187,7 +187,7 @@ body {
 //Notifications
 .q-notifications {
   .q-notifications__list {
-    padding-top: 4rem;
+    padding-top: 0.5rem;
 
     .q-notification {
       @extend .text-sm;
