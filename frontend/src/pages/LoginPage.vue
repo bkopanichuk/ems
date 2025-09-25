@@ -3,8 +3,8 @@
     <div class="col flex flex-center base-page-wrapper">
       <div class="column items-center base-card bordered-card login-card">
         <div class="column items-center full-width base-margin-bottom">
-          <div class="text-xl">EMS</div>
-          <div class="text-md text-medium">Energy Management System</div>
+          <div class="text-xxl">EMS</div>
+          <div class="text-lg text-medium">Energy Management System</div>
         </div>
 
         <q-form class="column items-center full-width" @submit="onSubmit" @reset="onReset">
@@ -13,7 +13,7 @@
             class="base-input full-width"
             label="Username"
             lazy-rules
-            :rules="[(val) => !!val || 'Username is required']"
+            :rules="[required('Username is required')]"
             :disable="loading"
           >
             <template v-slot:prepend>
@@ -23,11 +23,11 @@
 
           <q-input
             v-model="loginForm.password"
-            class="base-input full-width"
+            class="base-input full-width base-margin-bottom"
             label="Password"
             type="password"
             lazy-rules
-            :rules="[(val) => !!val || 'Password is required']"
+            :rules="[required('Password is required')]"
             :disable="loading"
           >
             <template v-slot:prepend>
@@ -35,19 +35,12 @@
             </template>
           </q-input>
 
+          <q-btn type="submit" class="base-button full-width" :loading="loading" :disable="loading">
+            Sign In
+          </q-btn>
+
           <div v-if="errorMessage" class="text-negative text-caption">
             {{ errorMessage }}
-          </div>
-
-          <div class="q-mt-lg">
-            <q-btn
-              type="submit"
-              color="primary"
-              class="full-width"
-              label="Sign In"
-              :loading="loading"
-              :disable="loading"
-            />
           </div>
         </q-form>
 
@@ -69,6 +62,7 @@ import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth.store';
 import { Notify } from 'quasar';
+import { required } from 'src/utils/validation';
 
 const router = useRouter();
 const route = useRoute();
