@@ -1,6 +1,6 @@
 <template>
   <q-page class="col base-page column items-center">
-    <div class="col column base-page-wrapper">
+    <div class="column no-wrap base-page-wrapper">
       <div class="text-xl base-margin-bottom">Profile Settings</div>
 
       <div class="row q-col-gutter-sm">

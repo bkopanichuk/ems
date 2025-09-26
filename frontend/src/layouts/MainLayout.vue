@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh Lpr lFf" class="main-layout">
+  <q-layout view="hHh Lpr lFf" class="main-layout column">
     <q-header class="row items-center">
       <q-toolbar class="row no-wrap items-center">
         <q-btn
@@ -83,7 +83,7 @@
       </q-list>
     </q-drawer>
 
-    <q-page-container>
+    <q-page-container class="col column">
       <router-view />
     </q-page-container>
 
