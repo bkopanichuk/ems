@@ -38,90 +38,91 @@
 
         <!-- Update Display Name Card -->
         <div class="col-12 col-md-6">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6 q-mb-md">Update Display Name</div>
+          <div class="column no-wrap base-card bordered-card" style="gap: 0.5rem 0">
+            <div class="text-lg">Update Display Name</div>
 
-              <q-form @submit="updateDisplayName" class="q-gutter-md">
-                <q-input
-                  v-model="displayNameForm.displayName"
-                  label="Display Name"
-                  hint="This is how your name appears in the system"
-                  :rules="[required('Display name is required')]"
-                />
+            <q-form @submit="updateDisplayName" class="column" style="gap: 1rem">
+              <q-input
+                v-model="displayNameForm.displayName"
+                label="Display Name"
+                hint="This is how your name appears in the system"
+                :rules="[required('Display name is required')]"
+                :disable="loadingName"
+                class="base-input base-margin-bottom base-margin-bottom--small"
+              />
 
-                <q-btn
-                  type="submit"
-                  color="primary"
-                  label="Update Name"
-                  :loading="loadingName"
-                  :disable="loadingName"
-                />
-              </q-form>
-            </q-card-section>
-          </q-card>
+              <q-btn
+                type="submit"
+                label="Update Name"
+                :loading="loadingName"
+                :disable="loadingName"
+                class="base-button"
+              />
+            </q-form>
+          </div>
         </div>
 
         <!-- Change Password Card (USER role only) -->
         <div v-if="profile.role === 'USER'" class="col-12">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6 q-mb-md">Change Password</div>
+          <div class="column no-wrap base-card bordered-card" style="gap: 0.5rem 0">
+            <div class="text-lg">Change Password</div>
 
-              <q-form @submit="changePassword" class="q-gutter-md">
-                <div class="row q-col-gutter-md">
-                  <div class="col-12 col-md-4">
-                    <q-input
-                      v-model="passwordForm.currentPassword"
-                      label="Current Password"
-                      type="password"
-                      :rules="[required('Current password is required')]"
-                      :disable="loadingPassword"
-                    />
-                  </div>
-
-                  <div class="col-12 col-md-4">
-                    <q-input
-                      v-model="passwordForm.newPassword"
-                      label="New Password"
-                      type="password"
-                      :rules="simplePasswordRules()"
-                      :disable="loadingPassword"
-                    />
-                  </div>
-
-                  <div class="col-12 col-md-4">
-                    <q-input
-                      v-model="passwordForm.confirmPassword"
-                      label="Confirm New Password"
-                      type="password"
-                      :rules="confirmPasswordRules(passwordForm.newPassword)"
-                      :disable="loadingPassword"
-                    />
-                  </div>
+            <q-form @submit="changePassword" class="column" style="gap: 1rem">
+              <div class="row q-col-gutter-md">
+                <div class="col-12 col-md-4">
+                  <q-input
+                    v-model="passwordForm.currentPassword"
+                    label="Current Password"
+                    type="password"
+                    :rules="[required('Current password is required')]"
+                    :disable="loadingPassword"
+                    class="base-input"
+                  />
                 </div>
 
-                <q-btn
-                  type="submit"
-                  color="primary"
-                  label="Change Password"
-                  :loading="loadingPassword"
-                  :disable="loadingPassword"
-                />
-              </q-form>
-            </q-card-section>
-          </q-card>
+                <div class="col-12 col-md-4">
+                  <q-input
+                    v-model="passwordForm.newPassword"
+                    label="New Password"
+                    type="password"
+                    :rules="simplePasswordRules()"
+                    :disable="loadingPassword"
+                    class="base-input"
+                  />
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <q-input
+                    v-model="passwordForm.confirmPassword"
+                    label="Confirm New Password"
+                    type="password"
+                    :rules="confirmPasswordRules(passwordForm.newPassword)"
+                    :disable="loadingPassword"
+                    class="base-input"
+                  />
+                </div>
+              </div>
+
+              <q-btn
+                type="submit"
+                label="Change Password"
+                :loading="loadingPassword"
+                :disable="loadingPassword"
+                class="base-button"
+              />
+            </q-form>
+          </div>
         </div>
 
         <!-- Admin Notice -->
         <div v-else class="col-12">
-          <q-banner class="bg-info text-white">
-            <template v-slot:avatar>
-              <q-icon name="info" color="white" />
-            </template>
-            Administrators cannot change their password through the application. Password must be
-            set via environment variables.
-          </q-banner>
+          <div class="row items-center base-card bordered-card" style="gap: 1rem">
+            <q-icon name="info" size="1.5rem" color="accent" />
+            <div class="col text-medium">
+              Administrators cannot change their password through the application. Password must be
+              set via environment variables.
+            </div>
+          </div>
         </div>
       </div>
     </div>
