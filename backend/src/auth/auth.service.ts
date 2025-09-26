@@ -347,6 +347,7 @@ export class AuthService {
         lastLoginAt: true,
         loginCount: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 

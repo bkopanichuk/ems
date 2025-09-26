@@ -33,6 +33,20 @@
               readonly
               class="base-input"
             />
+
+            <!-- <q-input
+              :model-value="formatDate(profile.lastLoginAt)"
+              label="Last Login"
+              readonly
+              class="base-input"
+            />
+
+            <q-input
+              :model-value="profile.loginCount || 0"
+              label="Login Count"
+              readonly
+              class="base-input"
+            /> -->
           </div>
         </div>
 
@@ -138,23 +152,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useQuasar, QForm } from 'quasar';
-import profileService from 'src/services/profile.service';
 import { useAuthStore } from 'src/stores/auth.store';
 import { required, simplePasswordRules, confirmPasswordRules } from 'src/utils/validation';
 
 const authStore = useAuthStore();
 const $q = useQuasar();
 
-const profile = ref({
-  id: '',
-  login: '',
-  displayName: null as string | null,
-  role: 'USER' as 'USER' | 'ADMIN',
-  createdAt: '',
-  updatedAt: '',
-});
+const profile = computed(
+  () =>
+    authStore.user || {
+      id: '',
+      login: '',
+      displayName: null as string | null,
+      role: 'USER' as 'USER' | 'ADMIN',
+      createdAt: '',
+      updatedAt: '',
+      lastLoginAt: '',
+      loginCount: 0,
+    },
+);
 
 const displayNameForm = ref({
   displayName: '',
@@ -166,8 +184,8 @@ const passwordForm = ref({
   confirmPassword: '',
 });
 
-const loadingName = ref(false);
-const loadingPassword = ref(false);
+const loadingName = computed(() => authStore.profileLoading);
+const loadingPassword = computed(() => authStore.profileLoading);
 
 const formatDate = (dateInput: string | Date | null | undefined) => {
   if (!dateInput) return 'N/A';
@@ -196,13 +214,16 @@ const formatDate = (dateInput: string | Date | null | undefined) => {
 };
 
 const fetchProfile = async () => {
-  try {
-    const response = await profileService.getProfile();
-    // Backend returns data directly, not wrapped
-    profile.value = response.data;
-    displayNameForm.value.displayName = profile.value.displayName || '';
-  } catch (error) {
-    console.error('Failed to fetch profile:', error);
+  // Trigger background refresh (silent=true means no loading state)
+  const result = await authStore.fetchProfile(true);
+
+  if (result.success && result.data) {
+    displayNameForm.value.displayName = result.data.displayName || '';
+  } else if (!result.success && authStore.user) {
+    // We have cached data, just couldn't refresh - that's ok
+    displayNameForm.value.displayName = authStore.user.displayName || '';
+  } else {
+    // No cached data and fetch failed
     $q.notify({
       message: 'Failed to load profile information',
       position: $q.screen.gt.xs ? 'top-right' : 'top',
@@ -212,46 +233,34 @@ const fetchProfile = async () => {
 };
 
 const updateDisplayName = async () => {
-  loadingName.value = true;
-  try {
-    const response = await profileService.updateProfile({
-      displayName: displayNameForm.value.displayName,
-    });
+  const result = await authStore.updateProfile(displayNameForm.value.displayName);
 
-    // Backend returns data directly
-    profile.value = response.data;
-    await authStore.fetchProfile(); // Update store
-
+  if (result.success) {
     $q.notify({
       message: 'Display name updated successfully',
       position: $q.screen.gt.xs ? 'top-right' : 'top',
       classes: 'max-width-24rem notify-success',
     });
-  } catch (error) {
+  } else {
     $q.notify({
-      message:
-        (error as { response?: { data?: { message?: string } } }).response?.data?.message ||
-        'Failed to update display name',
+      message: result.error || 'Failed to update display name',
       position: $q.screen.gt.xs ? 'top-right' : 'top',
       classes: 'max-width-24rem notify-error',
     });
-  } finally {
-    loadingName.value = false;
   }
 };
 
 const changePasswordForm = ref<QForm | null>(null);
 
 const changePassword = async () => {
-  loadingPassword.value = true;
-  try {
-    await profileService.changePassword({
-      currentPassword: passwordForm.value.currentPassword,
-      newPassword: passwordForm.value.newPassword,
-    });
+  const result = await authStore.changePassword(
+    passwordForm.value.currentPassword,
+    passwordForm.value.newPassword,
+  );
 
+  if (result.success) {
     $q.notify({
-      message: 'Password changed successfully',
+      message: result.message || 'Password changed successfully',
       position: $q.screen.gt.xs ? 'top-right' : 'top',
       classes: 'max-width-24rem notify-success',
     });
@@ -266,20 +275,22 @@ const changePassword = async () => {
     // Reset validation state in nextTick to ensure DOM updates first
     await nextTick();
     changePasswordForm.value?.resetValidation();
-  } catch (error) {
+  } else {
     $q.notify({
-      message:
-        (error as { response?: { data?: { message?: string } } }).response?.data?.message ||
-        'Failed to change password',
+      message: result.error || 'Failed to change password',
       position: $q.screen.gt.xs ? 'top-right' : 'top',
       classes: 'max-width-24rem notify-error',
     });
-  } finally {
-    loadingPassword.value = false;
   }
 };
 
 onMounted(() => {
+  // Initialize display name from cached data immediately
+  if (authStore.user) {
+    displayNameForm.value.displayName = authStore.user.displayName || '';
+  }
+
+  // Trigger background refresh
   void fetchProfile();
 });
 </script>
