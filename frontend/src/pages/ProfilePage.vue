@@ -7,32 +7,29 @@
         <!-- Profile Information Card -->
         <div class="col-12 col-md-6">
           <div class="column no-wrap base-card bordered-card" style="gap: 0.5rem 0">
-            <div class="text-lg">Profile Information</div>
-
-            <q-input :model-value="profile.login" label="Username" readonly class="base-input" />
-
-            <q-input
-              :model-value="profile.displayName || 'Not set'"
-              label="Display Name"
-              readonly
-              class="base-input"
-            />
-
-            <q-input :model-value="profile.role" label="Role" readonly class="base-input" />
-
-            <q-input
-              :model-value="formatDate(profile.createdAt)"
-              label="Created At"
-              readonly
-              class="base-input"
-            />
-
-            <q-input
-              :model-value="formatDate(profile.updatedAt)"
-              label="Updated At"
-              readonly
-              class="base-input"
-            />
+            <div class="text-lg">Account Information</div>
+            <div class="column" style="gap: 0.5rem">
+              <div class="row justify-between">
+                <span class="text-sm text-medium">Username:</span>
+                <span class="text-sm">{{ profile.login }}</span>
+              </div>
+              <div class="row justify-between">
+                <span class="text-sm text-medium">Display Name:</span>
+                <span class="text-sm">{{ profile.displayName || 'Not set' }}</span>
+              </div>
+              <div class="row justify-between">
+                <span class="text-sm text-medium">Role:</span>
+                <span class="text-sm">{{ profile.role }}</span>
+              </div>
+              <div class="row justify-between">
+                <span class="text-sm text-medium">Created At:</span>
+                <span class="text-sm">{{ formatDate(profile.createdAt) }}</span>
+              </div>
+              <div class="row justify-between">
+                <span class="text-sm text-medium">Updated At:</span>
+                <span class="text-sm">{{ formatDate(profile.updatedAt) }}</span>
+              </div>
+            </div>
 
             <!-- <q-input
               :model-value="formatDate(profile.lastLoginAt)"
@@ -55,7 +52,7 @@
           <div class="column no-wrap base-card bordered-card" style="gap: 0.5rem 0">
             <div class="text-lg">Update Display Name</div>
 
-            <q-form @submit="updateDisplayName" greedy class="column no-wrap" style="gap: 1.5rem 0">
+            <q-form @submit="updateDisplayName" greedy class="column no-wrap" style="gap: 2rem 0">
               <div class="row full-width">
                 <q-input
                   v-model="displayNameForm.displayName"
@@ -88,7 +85,7 @@
               @submit="changePassword"
               greedy
               class="column no-wrap"
-              style="gap: 1.5rem 0"
+              style="gap: 2rem 0"
             >
               <div class="row q-col-gutter-x-sm q-col-gutter-y-sm">
                 <div class="col-12 col-md-4">
@@ -225,7 +222,7 @@ const fetchProfile = async () => {
   } else {
     // No cached data and fetch failed
     $q.notify({
-      message: 'Failed to load profile information',
+      message: 'Failed to load account information',
       position: $q.screen.gt.xs ? 'top-right' : 'top',
       classes: 'max-width-24rem notify-error',
     });
