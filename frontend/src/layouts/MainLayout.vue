@@ -57,7 +57,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered :width="250" :breakpoint="600">
+    <q-drawer v-model="leftDrawerOpen" show-if-above>
       <q-list>
         <q-item-label header class="text-grey-8 text-weight-bold"> Navigation </q-item-label>
 
@@ -175,7 +175,7 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .main-layout {
   max-height: 100%;
   .q-header {
@@ -188,6 +188,11 @@ onMounted(async () => {
       padding: 0.5rem 1.5rem;
     }
     border-bottom: 0.0625rem solid $secondary-hover;
+  }
+
+  .q-drawer {
+    background: $secondary;
+    border-right: 0.0625rem solid $secondary-hover;
   }
 }
 </style>
