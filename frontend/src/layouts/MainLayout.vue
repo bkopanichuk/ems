@@ -108,9 +108,9 @@ const authStore = useAuthStore();
 
 const leftDrawerOpen = ref(false);
 const sessionsDialog = ref(false);
-const sessionCount = ref(0);
 
 const userName = computed(() => authStore.user?.displayName || authStore.user?.login || 'User');
+const sessionCount = computed(() => authStore.sessionCount);
 // const userLogin = computed(() => authStore.user?.login || '');
 // const userRole = computed(() => authStore.user?.role || 'USER');
 const isAdmin = computed(() => authStore.isAdmin);
@@ -123,12 +123,8 @@ const navigateToProfile = () => {
   void router.push('/profile');
 };
 
-const showSessions = async () => {
+const showSessions = () => {
   sessionsDialog.value = true;
-  const result = await authStore.getActiveSessions();
-  if (result?.success && result?.data) {
-    sessionCount.value = result.data.length;
-  }
 };
 
 const handleLogout = () => {
@@ -163,10 +159,7 @@ onMounted(async () => {
   await authStore.fetchProfile();
 
   // Get session count
-  const result = await authStore.getActiveSessions();
-  if (result?.success && result?.data) {
-    sessionCount.value = result.data.length;
-  }
+  await authStore.getActiveSessions();
 });
 </script>
 
