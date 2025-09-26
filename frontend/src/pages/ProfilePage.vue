@@ -41,15 +41,17 @@
           <div class="column no-wrap base-card bordered-card" style="gap: 0.5rem 0">
             <div class="text-lg">Update Display Name</div>
 
-            <q-form @submit="updateDisplayName" class="column" style="gap: 1rem">
-              <q-input
-                v-model="displayNameForm.displayName"
-                label="Display Name"
-                hint="This is how your name appears in the system"
-                :rules="[required('Display name is required')]"
-                :disable="loadingName"
-                class="base-input base-margin-bottom base-margin-bottom--small"
-              />
+            <q-form @submit="updateDisplayName" greedy class="column no-wrap" style="gap: 1.5rem 0">
+              <div class="row full-width">
+                <q-input
+                  v-model="displayNameForm.displayName"
+                  label="Display Name"
+                  hint="This is how your name appears in the system"
+                  :rules="[required('Display name is required')]"
+                  :disable="loadingName"
+                  class="base-input full-width"
+                />
+              </div>
 
               <q-btn
                 type="submit"
@@ -67,8 +69,14 @@
           <div class="column no-wrap base-card bordered-card" style="gap: 0.5rem 0">
             <div class="text-lg">Change Password</div>
 
-            <q-form @submit="changePassword" class="column" style="gap: 1rem">
-              <div class="row q-col-gutter-md">
+            <q-form
+              ref="changePasswordForm"
+              @submit="changePassword"
+              greedy
+              class="column no-wrap"
+              style="gap: 1.5rem 0"
+            >
+              <div class="row q-col-gutter-x-sm q-col-gutter-y-sm">
                 <div class="col-12 col-md-4">
                   <q-input
                     v-model="passwordForm.currentPassword"
@@ -130,8 +138,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useQuasar } from 'quasar';
+import { ref, onMounted, nextTick } from 'vue';
+import { useQuasar, QForm } from 'quasar';
 import profileService from 'src/services/profile.service';
 import { useAuthStore } from 'src/stores/auth.store';
 import { required, simplePasswordRules, confirmPasswordRules } from 'src/utils/validation';
@@ -232,6 +240,8 @@ const updateDisplayName = async () => {
   }
 };
 
+const changePasswordForm = ref<QForm | null>(null);
+
 const changePassword = async () => {
   loadingPassword.value = true;
   try {
@@ -252,6 +262,10 @@ const changePassword = async () => {
       newPassword: '',
       confirmPassword: '',
     };
+
+    // Reset validation state in nextTick to ensure DOM updates first
+    await nextTick();
+    changePasswordForm.value?.resetValidation();
   } catch (error) {
     $q.notify({
       message:
