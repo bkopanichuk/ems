@@ -73,7 +73,7 @@
         </q-item>
 
         <template v-if="isAdmin">
-          <q-separator />
+          <!-- <q-separator /> -->
 
           <q-item clickable v-ripple :to="'/users'" class="row no-wrap items-center drawer-item">
             <q-icon name="group" />
@@ -197,23 +197,33 @@ onMounted(async () => {
 
       .drawer-item {
         height: 4rem;
+        border-bottom: 0.0625rem solid $secondary-hover;
         padding: 0.5rem 1.5rem;
         font-size: 1rem;
         line-height: 1.5;
         font-weight: 500;
         color: $text-medium;
         transition:
-          color 0.3s,
-          background-color 0.3s;
+          background-color 0.3s,
+          color 0.3s;
 
         .q-icon {
           font-size: 1.5rem;
           margin-right: 0.75rem;
         }
 
-        &.q-router-link--active {
-          background: $accent;
+        &:hover {
+          background-color: $secondary-hover;
           color: $text;
+        }
+
+        &.q-router-link--active {
+          background-color: $accent;
+          color: $text;
+        }
+
+        .q-focus-helper {
+          display: none;
         }
       }
     }
