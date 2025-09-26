@@ -1,14 +1,17 @@
 <template>
-  <q-layout view="lHh Lpr lFf" class="main-layout">
+  <q-layout view="hHh Lpr lFf" class="main-layout">
     <q-header class="row items-center">
       <q-toolbar class="row no-wrap items-center">
         <q-btn
+          v-if="$q.screen.lt.md"
           class="base-button base-button--icon base-button--outlined"
           aria-label="Menu"
           @click="toggleLeftDrawer"
         >
           <q-icon name="menu" size="1.75rem" />
         </q-btn>
+
+        <div v-if="$q.screen.gt.sm" class="text-lg">EMS - Energy Management System</div>
 
         <q-space />
 
@@ -57,40 +60,24 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above>
+    <q-drawer v-model="leftDrawerOpen" show-if-above :width="remToPx(16)">
       <q-list>
-        <q-item-label header class="text-grey-8 text-weight-bold"> Navigation </q-item-label>
-
-        <q-item clickable v-ripple :to="'/'" exact>
-          <q-item-section avatar>
-            <q-icon name="dashboard" />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>Dashboard</q-item-label>
-          </q-item-section>
+        <q-item clickable v-ripple :to="'/'" exact class="row no-wrap items-center drawer-item">
+          <q-icon name="dashboard" />
+          <div>Dashboard</div>
         </q-item>
 
-        <q-item clickable v-ripple :to="'/inverters'">
-          <q-item-section avatar>
-            <q-icon name="solar_power" />
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>Мои системы</q-item-label>
-          </q-item-section>
+        <q-item clickable v-ripple :to="'/inverters'" class="row no-wrap items-center drawer-item">
+          <q-icon name="solar_power" />
+          <div>My systems</div>
         </q-item>
 
         <template v-if="isAdmin">
-          <q-separator spaced />
+          <q-separator />
 
-          <q-item-label header class="text-grey-8 text-weight-bold"> Administration </q-item-label>
-
-          <q-item clickable v-ripple :to="'/users'">
-            <q-item-section avatar>
-              <q-icon name="group" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>User Management</q-item-label>
-            </q-item-section>
+          <q-item clickable v-ripple :to="'/users'" class="row no-wrap items-center drawer-item">
+            <q-icon name="group" />
+            <div>User Management</div>
           </q-item>
         </template>
       </q-list>
@@ -113,7 +100,9 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth.store';
 import { Dialog, Loading } from 'quasar';
 import SessionsList from 'src/components/auth/SessionsList.vue';
+import { useQuasar } from 'quasar';
 
+const $q = useQuasar();
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -163,6 +152,12 @@ const handleLogout = () => {
   });
 };
 
+const remToPx = (rem: number) => {
+  const rootFontSize = getComputedStyle(document.documentElement).fontSize;
+  const fontSize = parseFloat(rootFontSize);
+  return rem * fontSize;
+};
+
 onMounted(async () => {
   // Fetch updated profile data
   await authStore.fetchProfile();
@@ -193,6 +188,35 @@ onMounted(async () => {
   .q-drawer {
     background: $secondary;
     border-right: 0.0625rem solid $secondary-hover;
+
+    .q-drawer__content {
+      .q-separator {
+        height: 0.0625rem;
+        background: $secondary-hover;
+      }
+
+      .drawer-item {
+        height: 4rem;
+        padding: 0.5rem 1.5rem;
+        font-size: 1.25rem;
+        line-height: 1.5;
+        font-weight: 600;
+        color: $text-medium;
+        transition:
+          color 0.3s,
+          background-color 0.3s;
+
+        .q-icon {
+          font-size: 1.5rem;
+          margin-right: 0.75rem;
+        }
+
+        &.q-router-link--active {
+          background: $accent;
+          color: $text;
+        }
+      }
+    }
   }
 }
 </style>
