@@ -60,7 +60,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above :width="remToPx(16)">
+    <q-drawer v-model="leftDrawerOpen" show-if-above :width="remToPx(14)">
       <q-list>
         <q-item clickable v-ripple :to="'/'" exact class="row no-wrap items-center drawer-item">
           <q-icon name="dashboard" />
@@ -198,9 +198,9 @@ onMounted(async () => {
       .drawer-item {
         height: 4rem;
         padding: 0.5rem 1.5rem;
-        font-size: 1.25rem;
+        font-size: 1rem;
         line-height: 1.5;
-        font-weight: 600;
+        font-weight: 500;
         color: $text-medium;
         transition:
           color 0.3s,
